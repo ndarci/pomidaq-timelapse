@@ -35,7 +35,7 @@ def shoot_video(m, duration_sec, vidfn):
 
     m.stop_recording()
 
-def shoot_timelapse(m, vid_dir, total_snapshots = 3, snapshot_duration_sec = 5, period_sec = 10):
+def shoot_timelapse(m, vid_dir, total_snapshots = 5, snapshot_duration_sec = 2, period_sec = 5):
     '''Shoot a timelapse, which will be a folder full of short video files, to be concatenated afterwards'''
     print_recording_info(m, vid_dir)
 
@@ -62,13 +62,14 @@ def shoot_timelapse(m, vid_dir, total_snapshots = 3, snapshot_duration_sec = 5, 
         
         # turn the LED off
         set_led(m, 0)
+        
+        nsnapshots += 1
 
         if nsnapshots < total_snapshots:
             print("Waiting", snapshot_duration_sec, "seconds to take next snapshot ...")
             # wait period_sec seconds for next snapshot
             time.sleep(period_sec)
 
-        nsnapshots += 1
 
     # stop recording and running miniscope
     m.stop()
@@ -79,14 +80,14 @@ def shoot_timelapse(m, vid_dir, total_snapshots = 3, snapshot_duration_sec = 5, 
 
 def merge_snapshots(vid_dir, vid_fn_list, ffmpeg_path, merged_vid_name):
     '''Use ffmpeg to merge the miniscope snapshots into a single video'''
-
     # write the list of snapshot filenames to a text file for ffmpeg
     merge_list = open(os.path.join(vid_dir, 'merge_file_names.txt'), 'w')
-    merge_list.write('# miniscope snapshots')
+    merge_list.write('# miniscope snapshots\n')
     for filename in vid_fn_list:
-        merge_list.write("file " + "'" + filename + "'")
-
-    subprocess.call([ffmpeg_path, '-f', 'concat', 'i', 'merge_file_names.txt', '-c', 'copy', os.path.join(vid_dir, merged_vid_name)])
+        merge_list.write("file " + "'" + filename + "'\n")
+    merge_list.close()
+    # call ffmpeg in concat mode on the list of snapshot files
+    subprocess.call([ffmpeg_path, '-f', 'concat', '-safe', '0', '-i', os.path.join(vid_dir, 'merge_file_names.txt'), '-c', 'copy', os.path.join(vid_dir, merged_vid_name)])
 
 
 def main():
@@ -116,7 +117,7 @@ def main():
     video_filename_list = shoot_timelapse(mscope, video_dirname)
 
     # merge snapshots into a single video
-    merge_snapshots(video_dirname, video_filename_list, final_merged_video_name)
+    merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
 
     # handle errors, if they happened
     if mscope.last_error:
