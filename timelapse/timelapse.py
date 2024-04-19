@@ -3,6 +3,8 @@
 # script to run the miniscope in time-lapse mode, adapted from example.py
 
 import time
+import datetime
+import os
 import sys
 import cv2
 
@@ -13,28 +15,48 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
-MINISCOPE_DEVICE = 'Miniscope_V4_BNO'  # The device type we want to connect to
-DEVICE_ID = 0  # the video device ID of our DAQ box
-VIDEO_FILENAME = '/mnt/c/Users/agroo/niko_miniscope_vids/miniscope-test.mkv' # video file location
-
-def print_recording_info(m):
-    '''output encoding format for miniscope 'm' and video file location'''
+def print_recording_info(m, vidfn):
+    '''output encoding format for miniscope 'm' and video file location 'vidfn'.'''
     print('\n--------')
     print('Codec used for recording: {}'.format(m.video_codec))
     print('Container used for recording: {}'.format(m.video_container))
-    print('Saving video in: {}'.format(VIDEO_FILENAME))
+    print('Saving video in: {}'.format(vidfn))
     print('--------\n')
 
-def shoot_timelapse(m, total_snapshots = 10, frames_per_snapshot = 5, period_sec = 5):
-    print_recording_info(m)
-
-    # just shoot video for 5 seconds for now
-    set_led(m, 20)
-    if not m.start_recording(VIDEO_FILENAME):
+def shoot_video(m, duration_sec, vidfn):
+    '''shoot a video of duration 'duration' on miniscope 'm'.'''
+    if not m.start_recording(vidfn):
         print('Unable to start video recording: {}'.format(m.last_error), file=sys.stderr)
         sys.exit(1)
 
-    time.sleep(5)
+    time.sleep(duration_sec)
+
+def shoot_timelapse(m, vid_dir, total_snapshots = 10, snapshot_duration_sec = 5, period_sec = 10):
+    print_recording_info(m)
+
+    # # just shoot video for 5 seconds for now
+    # set_led(m, 20)
+    # shoot_video(m, 5)
+
+    # time lapse loop
+    nsnapshots = 0
+    while nsnapshots < total_snapshots:
+        # turn the LED on
+        set_led(m, 20)
+
+        # record for a few seconds and write to a file named for the second it started
+        date_sec = datetime.now().strftime("%y-%m-%d_%H:%M:%S")
+        snapshot_filename = 'miniscope_snapshot_' + date_sec
+        vid_path = os.path.join(vid_dir, snapshot_filename)
+        shoot_video(m, snapshot_duration_sec, vid_path)
+        
+        # turn the LED off
+        set_led(m, 0)
+
+        # wait period_sec seconds for next snapshot
+        nsnapshots += 1
+        time.sleep(period_sec)
+    
 
     # verify that LED is turned off before function returns 
     set_led(m, 0)
@@ -42,41 +64,18 @@ def shoot_timelapse(m, total_snapshots = 10, frames_per_snapshot = 5, period_sec
     # stop recording and running miniscope
     m.stop()
 
-
-
-    # # time lapse loop
-    # nsnapshots = 0
-    # while nsnapshots < total_snapshots:
-    #     # turn the LED on
-    #     set_led(m, 20)
-
-    #     # start recording
-    #     if not m.start_recording(VIDEO_FILENAME):
-    #         print('Unable to start video recording: {}'.format(m.last_error), file=sys.stderr)
-    #         sys.exit(1)
-
-    #     # record a small number of frames
-    #     nframes = 0
-    #     while nframes < frames_per_snapshot:
-    #         frame = m.current_disp_frame
-    #         if frame is not None:
-    #             cv2.imshow('Miniscope Display', frame)
-    #             cv2.waitKey(50)
-    #             nframes += 1
-        
-    #     # turn the LED off
-    #     set_led(m, 0)
-
-    #     # wait period_sec seconds for next snapshot
-    #     nsnapshots += 1
-    #     time.sleep(period_sec)
-
 def main():
+    # define key strings for setup and recording
+    miniscope_name = 'Miniscope_V4_BNO'  # The device type we want to connect to
+    daq_id = 0  # the video device ID of our DAQ box
+    # video_filename = '/mnt/c/Users/agroo/niko_miniscope_vids/miniscope-test.mkv' # video file location
+    video_dirname = '/home/agroo/niko_miniscope_vids/timelapse_test'
+
     # create new Miniscope instance
     mscope = Miniscope()
 
     # run some diagnostics and start it running
-    setup_miniscope(mscope, MINISCOPE_DEVICE, DEVICE_ID)
+    setup_miniscope(mscope, miniscope_name, daq_id)
 
     # set initial control levels
     set_led(mscope, 0)
@@ -84,7 +83,7 @@ def main():
     set_gain(mscope, 0)
 
     # run timelapse loop with input parameters
-    shoot_timelapse(mscope)
+    shoot_timelapse(mscope, video_dirname)
 
     # handle errors, if they happened
     if mscope.last_error:
