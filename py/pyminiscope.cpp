@@ -107,6 +107,8 @@ PYBIND11_MODULE(miniscope, m)
         .def("start_recording", &Miniscope::startRecording, "Start recording a video file")
         .def("stop_recording", &Miniscope::stopRecording, "Finish the current recording")
 
+        .def("capture_zstack", &captureZStack, "Capture a Z-stack")
+
         .def_property_readonly("controls", &Miniscope::controls, "Get available controls for this device")
         .def("control_value", &Miniscope::controlValue, "Retrieve current control value for the given control ID")
         .def("set_control_value", &Miniscope::setControlValue, "Set new value for control with the given ID")

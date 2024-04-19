@@ -36,11 +36,11 @@ def shoot_timelapse(m, total_snapshots = 10, frames_per_snapshot = 5, period_sec
 
     time.sleep(5)
 
-    # stop recording i think?? need to check what this does
-    m.stop()
-
     # verify that LED is turned off before function returns 
     set_led(m, 0)
+
+    # stop recording and running miniscope
+    m.stop()
 
 
 
@@ -76,11 +76,11 @@ def main():
     mscope = Miniscope()
 
     # run some diagnostics and start it running
-    setup_miniscope(mscope)
+    setup_miniscope(mscope, MINISCOPE_DEVICE, DEVICE_ID)
 
     # set initial control levels
     set_led(mscope, 0)
-    set_focus(mscope, 0)
+    set_focus(mscope, 45)
     set_gain(mscope, 0)
 
     # run timelapse loop with input parameters
@@ -89,6 +89,8 @@ def main():
     # handle errors, if they happened
     if mscope.last_error:
         print('Error while acquiring data from Miniscope: {}'.format(mscope.last_error), file=sys.stderr)
+
+    # set_led(mscope, 0)
 
     # disconnect from scope and close cv2 GUI windows
     mscope.disconnect()
