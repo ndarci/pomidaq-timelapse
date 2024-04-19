@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 
-#
-# Small example on how to use the Miniscope library from Python
-# In order to make this example work, first install the "miniscope" Python
-# module with CMake.
-# Alternatively you can also place the compiled "miniscope" module into a
-# path you like and then change PYTHONPATH (sys.path) so Python can find it.
-#
+# script to run the miniscope in time-lapse mode, adapted from example.py
 
 import time
-
 import sys
 import cv2
 
+# tell python where compiled miniscope module is installed
 sys.path.append('/lib/python3.10/dist-packages/')
-
 from miniscope import Miniscope, ControlKind
 
 MINISCOPE_DEVICE = 'Miniscope_V4_BNO'  # The device type we want to connect to
 DEVICE_ID = 0  # the video device ID of our DAQ box
-# VIDEO_FILENAME = '/tmp/miniscope-test.mkv'  # name of the saved video
 VIDEO_FILENAME = '/mnt/c/Users/agroo/niko_miniscope_vids/miniscope-test.mkv'
 
 # create new Miniscope instance
@@ -30,7 +22,7 @@ mscope = Miniscope()
 mscope.set_print_extra_debug(False)
 
 # list all available miniscope types
-print('Available Miniscope hardware types:')
+print('Available Miniscope harware types:')
 for dname in mscope.available_device_types:
     print(' * {}'.format(dname))
 
@@ -65,18 +57,15 @@ if not mscope.run():
     print('Unable to start data acquisition: {}'.format(mscope.last_error), file=sys.stderr)
     sys.exit(1)
 
-# adjust some controls
-GAIN_VAL = 1
-print('Setting gain control to {}'.format(controls['gain'].labels[GAIN_VAL]))
-mscope.set_control_value('gain', GAIN_VAL)
-
-time.sleep(1)
-
-EXCITATION_VAL = 20
-print('Setting excitation control to {}'.format(EXCITATION_VAL))
-mscope.set_control_value('led0', EXCITATION_VAL)
-
-time.sleep(1)
+def set_led(m, val):
+    '''Set the LED on the miniscope 'm' to the value 'val' (0-100).'''
+    if 0 <= val <= 100:
+        time.sleep(1)
+        print('Setting excitation control to {}'.format(val))
+        m.set_control_value('led0', val)
+        time.sleep(1)
+    else:
+        print("Please input a value between 0 and 100.")
 
 # prepare video recording
 print('\n--------')
@@ -85,33 +74,37 @@ print('Container used for recording: {}'.format(mscope.video_container))
 print('Saving video in: {}'.format(VIDEO_FILENAME))
 print('--------\n')
 
-if not mscope.start_recording(VIDEO_FILENAME):
-    print('Unable to start video recording: {}'.format(mscope.last_error), file=sys.stderr)
-    sys.exit(1)
+# time lapse loop
+nsnapshots = 0
+while nsnapshots < 10:
+    # turn the LED on
+    set_led(mscope, 20)
 
-try:
-    print('Recording... Terminate with CTL+C\n')
-    while mscope.is_running:
+    # start recording
+    if not mscope.start_recording(VIDEO_FILENAME):
+        print('Unable to start video recording: {}'.format(mscope.last_error), file=sys.stderr)
+        sys.exit(1)
+    # record a small number of frames
+    nframes = 0
+    while nframes < 5:
         frame = mscope.current_disp_frame
         if frame is not None:
             cv2.imshow('Miniscope Display', frame)
             cv2.waitKey(50)
-except KeyboardInterrupt:
-    print('User terminated recording. Shutting down.')
-    print('Timestamp of last recorded frame: {}'.format(mscope.last_recorded_frame_time))
+            nframes += 1
+    
+    # turn the LED off
+    set_led(mscope, 0)
 
-    time.sleep(1)
-    EXCITATION_VAL = 0
-    print('Setting excitation control to {}'.format(EXCITATION_VAL))
-    mscope.set_control_value('led0', EXCITATION_VAL)
-    time.sleep(1)
-
-    mscope.stop()
+    # wait 5 seconds for next snapshot
+    nsnapshots += 1
+    time.sleep(5)
+    
+set_led(mscope, 0)
+mscope.stop()
 
 if mscope.last_error:
     print('Error while acquiring data from Miniscope: {}'.format(mscope.last_error), file=sys.stderr)
-
-
 
 mscope.disconnect()
 cv2.destroyAllWindows()
