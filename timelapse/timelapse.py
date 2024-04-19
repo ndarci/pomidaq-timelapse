@@ -66,6 +66,8 @@ def shoot_timelapse(m, vid_dir, total_snapshots = 3, snapshot_duration_sec = 5, 
         nsnapshots += 1
         time.sleep(period_sec)
 
+        # foo
+
     # stop recording and running miniscope
     m.stop()
 
