@@ -4,6 +4,7 @@ list(APPEND CMAKE_MODULE_PATH "/home/agroo/src/pomidaq/contrib/cmake/")
 list(APPEND CMAKE_MODULE_PATH "/home/agroo/anaconda3/envs/miniscope")
 list(APPEND CMAKE_PREFIX_PATH "/home/agroo/anaconda3/envs/miniscope/lib/python3.12/site-packages/")
 
+
 find_package(pybind11 REQUIRED)
 find_package(NumPy REQUIRED)
 
