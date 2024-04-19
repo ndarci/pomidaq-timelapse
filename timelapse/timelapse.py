@@ -15,12 +15,12 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
-def print_recording_info(m, vidfn):
+def print_recording_info(m, vid_dir):
     '''output encoding format for miniscope 'm' and video file location 'vidfn'.'''
     print('\n--------')
     print('Codec used for recording: {}'.format(m.video_codec))
     print('Container used for recording: {}'.format(m.video_container))
-    print('Saving video in: {}'.format(vidfn))
+    print('Saving snapshots to directory: {}'.format(vid_dir))
     print('--------\n')
 
 def shoot_video(m, duration_sec, vidfn):
@@ -32,7 +32,7 @@ def shoot_video(m, duration_sec, vidfn):
     time.sleep(duration_sec)
 
 def shoot_timelapse(m, vid_dir, total_snapshots = 10, snapshot_duration_sec = 5, period_sec = 10):
-    print_recording_info(m)
+    print_recording_info(m, vid_dir)
 
     # # just shoot video for 5 seconds for now
     # set_led(m, 20)
