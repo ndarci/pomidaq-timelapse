@@ -189,6 +189,8 @@ You should now be able to run the ```py/example.py``` Python script to control t
 
 There is unfortunately no API documentation for all the functions available in the miniscope module, but the example script should demonstrate enough to get started.
 
-For an example of a time lapse script, see ```timelapse/timelapse.py```. Note that you will need to install the [ffmpeg](https://ffmpeg.org/) software to merge the snapshot videos together.
+For an example of a time lapse script, see ```timelapse/timelapse.py``` (an active work in progress!). Note that you will need to install the [ffmpeg](https://ffmpeg.org/) software to merge the snapshot videos together.
+
+Please email niko.darcimaher@gmail.com with any questions!
 
 
