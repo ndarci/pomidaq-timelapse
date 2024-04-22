@@ -2,6 +2,11 @@
 
 # script to run the miniscope in time-lapse mode, adapted from example.py
 
+# led0 - excitation, default 0
+# ewl - focus distance, default 0
+# gain - gain, default "Low"
+# frameRate - frame rate, default 30
+
 import time
 from datetime import datetime
 import os
