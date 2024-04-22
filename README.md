@@ -8,21 +8,21 @@ For the original PoMiDAQ README, see ORIG_README.md or the [PoMiDAQ GitHub](http
 
 I set this up on a Windows laptop with the following specs:
 
-| Hardware | | |
-|---|---|---|
-| | Model | Dell Inspiron 3583
-| | Device name | DESKTOP-H560LU9
-| | Processor | Intel(R) Celeron(R) CPU 4205U @ 1.80GHz   1.80 GHz
-| | Installed RAM | 20.0 GB (19.9 GB usable)
-| | System type | 64-bit operating system, x64-based processor
+| | Hardware |
+---|---
+Model | Dell Inspiron 3583
+Device name | DESKTOP-H560LU9
+Processor | Intel(R) Celeron(R) CPU 4205U @ 1.80GHz   1.80 GHz
+Installed RAM | 20.0 GB (19.9 GB usable)
+System type | 64-bit operating system, x64-based processor
 
-| Software | | |
-|---|---|---|
-| | Edition | Windows 10 Home
-| | Version | 22H2
-| | Installed on | 8/8/2021
-| | OS build | 19045.4170
-| | Experience | Windows Feature Experience Pack 1000.19054.1000.0
+| | Software |
+---|---
+Edition | Windows 10 Home
+Version | 22H2
+Installed on | 8/8/2021
+OS build | 19045.4170
+Experience | Windows Feature Experience Pack 1000.19054.1000.0
 
 Our Miniscope is a __Miniscope v4.41 with the BNO sensor.__
 
