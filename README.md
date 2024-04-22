@@ -24,7 +24,7 @@ Installed on | 8/8/2021
 OS build | 19045.4170
 Experience | Windows Feature Experience Pack 1000.19054.1000.0
 
-Our Miniscope is a __Miniscope v4.41 with the BNO sensor.__
+Our Miniscope is a __Miniscope v4.41 with the BNO sensor__, and we are using the DAQ firmware version __56070__.
 
 If you are already on a Linux machine, skip to step 2. If you are on a Mac, you may need to dual-boot your machine with Linux for this to work.
 
