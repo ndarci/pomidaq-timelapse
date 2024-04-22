@@ -2,6 +2,8 @@
 
 TL;DR - The [PoMiDAQ](https://github.com/bothlab/pomidaq) software includes a Python module that can be used to control the Miniscope with a script, and has all the same features as the [UCLA Miniscope DAQ QT Software](https://github.com/Aharoni-Lab/Miniscope-DAQ-QT-Software). It's a bit tricky to set up because PoMiDAQ has to run on Linux for the Python module to work.
 
+For the original PoMiDAQ README, see ORIG_README.md or the [PoMiDAQ GitHub](https://github.com/bothlab/pomidaq).
+
 ## Prerequisities
 
 I set this up on a Windows laptop with the following specs:
