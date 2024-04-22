@@ -8,21 +8,21 @@ For the original PoMiDAQ README, see ORIG_README.md or the [PoMiDAQ GitHub](http
 
 I set this up on a Windows laptop with the following specs:
 
-| Hardware | |
----|---
-Model | Dell Inspiron 3583
-Device name | DESKTOP-H560LU9
-Processor | Intel(R) Celeron(R) CPU 4205U @ 1.80GHz   1.80 GHz
-Installed RAM | 20.0 GB (19.9 GB usable)
-System type | 64-bit operating system, x64-based processor
+| Hardware | | |
+|---|---|---|
+| | Model | Dell Inspiron 3583
+| | Device name | DESKTOP-H560LU9
+| | Processor | Intel(R) Celeron(R) CPU 4205U @ 1.80GHz   1.80 GHz
+| | Installed RAM | 20.0 GB (19.9 GB usable)
+| | System type | 64-bit operating system, x64-based processor
 
-| Software | |
----|---
-Edition | Windows 10 Home
-Version | 22H2
-Installed on | 8/8/2021
-OS build | 19045.4170
-Experience | Windows Feature Experience Pack 1000.19054.1000.0
+| Software | | |
+|---|---|---|
+| | Edition | Windows 10 Home
+| | Version | 22H2
+| | Installed on | 8/8/2021
+| | OS build | 19045.4170
+| | Experience | Windows Feature Experience Pack 1000.19054.1000.0
 
 Our Miniscope is a __Miniscope v4.41 with the BNO sensor.__
 
@@ -32,14 +32,14 @@ If you are already on a Linux machine, skip to step 2. If you are on a Mac, you 
 
 ### Base WSL
 
-Before downloading PoMiDAQ, you need to have a Linux operating system running on your computer. You can do this either with WSL or by dual-booting (I used WSL).
+Before downloading PoMiDAQ, you need to have a Linux operating system running on your computer. You can do this either with Windows Subsystem for Linux (WSL) or by dual-booting (I used WSL).
 
 WSL will run a Linux operating system inside your Windows machine, installing the new filesystem at ```/```, your computer's "root." You can access your Linux files from Windows and vice versa.
 
 To set up WSL, follow the instructions here: https://learn.microsoft.com/en-us/windows/wsl/install
 
 * I installed Ubuntu 22.04.3 LTS
-* Verify that you are running WSL2. There are instructions in the above link on how to check, and upgrade if WSL1 if needed.
+* Verify that you are running WSL2. There are instructions in the above link on how to check, and upgrade from WSL1 if needed.
 
 Once everything is installed, make sure the installation has worked by opening Powershell as administrator and typing ```wsl``` or ```bash```. You should see a new command prompt appear that ends in ```$```. From now on, use either of these commands to launch WSL from Powershell.
 
@@ -70,13 +70,13 @@ conda activate
 
 This should activate your ```base``` environment, and put ```(base)``` at the beginning of your command prompt.
 
-Leave Anaconda here for now, and we'll use it to create a virtual environment with all the necessary packages once PoMiDAQ is installed.
+Leave Anaconda here for now, and you'll use it to create a virtual environment with all the necessary packages once PoMiDAQ is installed.
 
 ### Visual Studio Code
 
 Install VS Code for __Windows, not Linux__, using the link here: https://code.visualstudio.com/
 
-Once the installer finishes running, you can open VS Code by opening a WSL prompt and typing ```code```. When VS Code opens and asks if you want to install the WSL extension, say yes. 
+Once the installer finishes running, you can open VS Code by opening a WSL prompt and typing ```code```. When VS Code opens and asks if you want to install the WSL extension, say yes. VS Code will set up a WSL server for you to develop in WSL.
 
 ### git
 
@@ -155,7 +155,7 @@ Create a new conda environment called ```miniscope310``` with Python version 3.1
 conda create --name miniscope310 python=3.10
 ```
 
-Activate the environment (you should see ```(miniscope310)``` before your command prompt), then install the packages we'll need to compile the PoMiDAQ Python module:
+Activate the environment (you should see ```(miniscope310)``` before your command prompt), then install the packages you'll need to compile the PoMiDAQ Python module:
 
 ```
 conda activate miniscope310
