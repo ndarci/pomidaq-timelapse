@@ -8,7 +8,7 @@ For the original PoMiDAQ README, see ORIG_README.md or the [PoMiDAQ GitHub](http
 
 I set this up on a Windows laptop with the following specs:
 
-| | Hardware |
+| Hardware | |
 ---|---
 Model | Dell Inspiron 3583
 Device name | DESKTOP-H560LU9
@@ -16,7 +16,7 @@ Processor | Intel(R) Celeron(R) CPU 4205U @ 1.80GHz   1.80 GHz
 Installed RAM | 20.0 GB (19.9 GB usable)
 System type | 64-bit operating system, x64-based processor
 
-| | Software |
+| Software | |
 ---|---
 Edition | Windows 10 Home
 Version | 22H2
