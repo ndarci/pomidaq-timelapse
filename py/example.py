@@ -78,7 +78,7 @@ mscope.set_control_value('gain', GAIN_VAL)
 
 time.sleep(1)
 
-EXCITATION_VAL = 20
+EXCITATION_VAL = 10
 print('Setting excitation control to {}'.format(EXCITATION_VAL))
 mscope.set_control_value('led0', EXCITATION_VAL)
 

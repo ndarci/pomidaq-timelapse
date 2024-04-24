@@ -22,12 +22,26 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
-def take_photo(m, image_fn):
+def take_photo(m, image_fn, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
-    frame = m.current_disp_frame
+
+    # TODO: somehow control for the frames that are all covered in horizontal lines
+
+    # TODO: get rid of little BNO indicator logo in bottom corner
+
+    # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
+    nframes = 0
+    while m.is_running and nframes < nbuffer_frames:
+        frame = m.current_disp_frame
+        if frame is not None:
+            # cv2.imshow('Miniscope Display', frame)
+            # cv2.waitKey(50)
+            # print("recorded frame", nframes)
+            nframes += 1
     cv2.imwrite(image_fn, frame)
 
-def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
+
+def shoot_timelapse(m, image_dir, total_snapshots, period_sec, excitation_strength = 20):
     '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
 
     # TODO: add z-stack function... need to decide how to organize clips
@@ -41,15 +55,14 @@ def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
     nsnapshots = 0
     filenames = [None] * total_snapshots
     while nsnapshots < total_snapshots:
-        print("Taking snapshot", nsnapshots, "...")
-
         # turn the LED on
-        set_led(m, 20)
+        set_led(m, excitation_strength)
 
         # take a picture at the current state
         snapshot_filename = 'miniscope_snapshot_' + str(nsnapshots) + '.jpg'
         img_path = os.path.join(image_dir, snapshot_filename)
         filenames[nsnapshots] = img_path
+        print("Taking snapshot", nsnapshots, "...")
         take_photo(m, img_path)
         
         # turn the LED off
@@ -60,8 +73,6 @@ def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
         if nsnapshots < total_snapshots:
             print("Waiting", period_sec, "seconds to take next snapshot ...")
             time.sleep(period_sec)
-
-    set_led(m, 0)
 
     # stop recording and running miniscope
     m.stop()
@@ -106,7 +117,7 @@ def main():
     set_gain(mscope, 0)
 
     # run timelapse loop with input parameters
-    image_filename_list = shoot_timelapse(mscope, image_dirname, total_snapshots = 5, period_sec = 1)
+    image_filename_list = shoot_timelapse(mscope, image_dirname, total_snapshots = 1, period_sec = 1)
 
     # merge snapshots into a single video
     # merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
@@ -117,6 +128,8 @@ def main():
 
     # disconnect from scope 
     mscope.disconnect()
+
+    # cv2.destroyAllWindows()
 
     return
 
