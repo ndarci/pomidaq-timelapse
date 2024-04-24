@@ -73,7 +73,7 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
         set_focus(m, current_focus)
         take_photo(m, this_file_path)
 
-        filenames[current_focus].append(this_file_path)
+        filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
         current_focus += zparams['step']
         z_index += 1
         
@@ -95,8 +95,10 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     timestep = 0
     filenames = {}
+    i = 0
     for z in range(zparams['start'], zparams['end']+1, zparams['step']):
-        filenames[z] = []
+        filenames[z_int_to_string(i, z)] = []
+        i += 1
 
     # time lapse loop
     while timestep < total_timesteps:
@@ -132,8 +134,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
-    for z in img_fn_dict.keys():
-        z_dir = z_int_to_string(z)
+    for z_dir in img_fn_dict.keys():
         merged_video_name = 'miniscope_timelapse_' + params_to_suffix(z_dir, led, gain) + '.mp4'
         subprocess.call([ffmpeg_path, \
                         '-framerate', '30', \
@@ -172,7 +173,7 @@ def main():
                                             total_timesteps = 2, \
                                             period_sec = 1)
 
-    # print(image_filename_dict)
+    print(image_filename_dict)
 
     # merge images into a time lapse video
     merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
