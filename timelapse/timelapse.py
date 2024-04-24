@@ -134,6 +134,9 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
+
+    # TODO: make this into a separate script, so that images can be collected and merged after... need to write an index of filenames somewhere
+
     for z_dir in img_fn_dict.keys():
         merged_video_name = 'miniscope_timelapse_' + params_to_suffix(z_dir, led, gain) + '.mp4'
         merged_video_path = os.path.join(img_dir, z_dir, merged_video_name)
