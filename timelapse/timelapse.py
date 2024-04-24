@@ -22,19 +22,22 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
+def z_int_to_string(z_int):
+    '''Convert a z-level integer to a friendlier string for filepaths'''
+    # get rid of dashes in negatives
+    if z_int < 0:
+        focus_str = 'neg' + str(abs(z_int))
+    else:
+        focus_str = str(z_int)
+    z_str = 'z' + str(z_int) + '_' + focus_str
+    return z_str
+
 def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
     # TODO: get a precise timestamp of when the image was taken, store in name or metadata
 
-    # get rid of dashes in negative focus dists for filepath
-    if focus < 0:
-        focus_str = 'neg' + str(abs(focus))
-    else:
-        focus_str = str(focus)
-
-    # put each z level in its own directory
-    z_dir = 'z' + str(z_index) + '_' + focus_str
+    z_dir = z_int_to_string(focus)
     if not os.path.exists(os.path.join(image_dir, z_dir)):
         os.makedirs(os.path.join(image_dir, z_dir))
 
@@ -63,11 +66,14 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
     z_index = 0
     while current_focus <= zparams['end']:
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
+
         set_focus(m, current_focus)
         take_photo(m, this_file_path)
+
+        filenames[current_focus].append(this_file_path)
         current_focus += zparams['step']
         z_index += 1
-        filenames[current_focus].append(this_file_path)
+        
     return filenames
 
 def print_hline():
@@ -121,16 +127,25 @@ def shoot_timelapse(m, image_dir, zparams, total_timesteps, period_sec, excitati
 
     return filenames
 
-# def merge_timelapse(vid_dir, vid_fn_list, ffmpeg_path, merged_vid_name):
-#     '''Use ffmpeg to merge the miniscope images into a single video'''
-#     # write the list of filenames to a text file for ffmpeg
-#     merge_list = open(os.path.join(vid_dir, 'merge_file_names.txt'), 'w')
-#     merge_list.write('# miniscope images\n')
-#     for filename in vid_fn_list:
-#         merge_list.write("file " + "'" + filename + "'\n")
-#     merge_list.close()
-#     # call ffmpeg in concat mode on the list of image files
-#     subprocess.call([ffmpeg_path, '-f', 'concat', '-safe', '0', '-i', os.path.join(vid_dir, 'merge_file_names.txt'), '-c', 'copy', os.path.join(vid_dir, merged_vid_name)])
+def merge_timelapse(img_dir, img_fn_dict, ffmpeg_path):
+    '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
+    for z in img_fn_dict.keys():
+        z_dir = z_int_to_string(z)
+        subprocess.call([ffmpeg_path, \
+                        '-framerate', '30', \
+                        '-pattern_type', 'glob', \
+                        '-i', img_dir + '/' + z_dir + '/*.jpg', \
+                        '-s:v', '680x680', \
+                        '-c:v', 'libx264', \
+                        '-crf', '17', \
+                        '-pix_fmt', 'yuv420p', \
+                        'miniscope_timelapse_merged'])
+
+
+    ~/src/ffmpeg-git-20240301-amd64-static/ffmpeg -framerate 30 -pattern_type glob -i "folder-with-photos/*.jpg" -s:v 680x680 -c:v libx264 -crf 17 -pix_fmt yuv420p my-timelapse.mp4
+
+    # call ffmpeg in concat mode on the list of image files
+    subprocess.call([ffmpeg_path, '-f', 'concat', '-safe', '0', '-i', os.path.join(vid_dir, 'merge_file_names.txt'), '-c', 'copy', os.path.join(vid_dir, merged_vid_name)])
 
 def main():
     # create new Miniscope instance
@@ -154,8 +169,7 @@ def main():
     print(image_filename_dict)
 
     # merge images into a time lapse video
-    # final_merged_video_name = 'miniscope_timelapse_merged_' + date_sec + '.mp4'
-    # merge_timelapse(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
+    merge_timelapse(image_dir_now, image_filename_dict, FFMPEG_PATH)
 
     # disconnect from scope 
     mscope.disconnect()
