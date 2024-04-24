@@ -22,69 +22,44 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
-def print_recording_info(m, vid_dir):
-    '''Output encoding format and video save directory'''
-    print('\n--------')
-    print('Codec used for recording: {}'.format(m.video_codec))
-    print('Container used for recording: {}'.format(m.video_container))
-    print('Saving snapshots to directory: {}'.format(vid_dir))
-    print('--------\n')
-
-def shoot_video(m, duration_sec, vidfn):
-    '''Shoot a video'''
-    if not m.start_recording(vidfn):
-        print('Unable to start video recording: {}'.format(m.last_error), file=sys.stderr)
-        sys.exit(1)
-
-    time.sleep(duration_sec)
-
-    m.stop_recording()
-
-def take_photo(m, image_dir, image_fn):
+def take_photo(m, image_fn):
     '''Take a photo with the Miniscope'''
     frame = m.current_disp_frame
-    cv2.imwrite(os.path.join(image_dir, image_fn), frame)
+    cv2.imwrite(image_fn, frame)
 
 def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
     '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
 
     # TODO: add z-stack function... need to decide how to organize clips
 
-    print_recording_info(m, image_dir)
+    # # just shoot one image for now
+    # set_led(m, 20)
+    # take_photo(m, image_dir, "miniscope_test_0.jpg")
 
-    # just shoot one image for now
-    set_led(m, 20)
+    # time lapse loop
+    print("Starting time lapse recording. Total snapshots=", total_snapshots, ": period (sec)=", period_sec)
+    nsnapshots = 0
+    filenames = [None] * total_snapshots
+    while nsnapshots < total_snapshots:
+        print("Taking snapshot", nsnapshots, "...")
 
-    take_photo(m, image_dir, "miniscope_test_0.jpg")
+        # turn the LED on
+        set_led(m, 20)
 
-    # shoot_video(m, 5)
-
-    # # time lapse loop
-    # print("Starting time lapse recording. Total snapshots=", total_snapshots, ": snapshot duration (sec)=", snapshot_duration_sec, ": period (sec)=", period_sec)
-    # nsnapshots = 0
-    # filenames = [None] * total_snapshots
-    # while nsnapshots < total_snapshots:
-    #     print("Taking snapshot", nsnapshots, "...")
-
-    #     # turn the LED on
-    #     set_led(m, 20)
-
-    #     # record for a few seconds
-    #     snapshot_filename = 'miniscope_snapshot_' + str(nsnapshots) + '.mkv'
-    #     vid_path = os.path.join(vid_dir, snapshot_filename)
-    #     filenames[nsnapshots] = vid_path
-    #     # print('video path: ' + vid_path)
-    #     shoot_video(m, snapshot_duration_sec, vid_path)
+        # take a picture at the current state
+        snapshot_filename = 'miniscope_snapshot_' + str(nsnapshots) + '.jpg'
+        img_path = os.path.join(image_dir, snapshot_filename)
+        filenames[nsnapshots] = img_path
+        take_photo(m, img_path)
         
-    #     # turn the LED off
-    #     set_led(m, 0)
+        # turn the LED off
+        set_led(m, 0)
         
-    #     nsnapshots += 1
+        nsnapshots += 1
 
-    #     if nsnapshots < total_snapshots:
-    #         print("Waiting", snapshot_duration_sec, "seconds to take next snapshot ...")
-    #         # wait period_sec seconds for next snapshot
-    #         time.sleep(period_sec)
+        if nsnapshots < total_snapshots:
+            print("Waiting", period_sec, "seconds to take next snapshot ...")
+            time.sleep(period_sec)
 
     set_led(m, 0)
 
@@ -93,8 +68,7 @@ def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
 
     print("Time lapse recording finished.")
 
-    # return filenames
-    return
+    return filenames
 
 def merge_snapshots(vid_dir, vid_fn_list, ffmpeg_path, merged_vid_name):
     '''Use ffmpeg to merge the miniscope snapshots into a single video'''
@@ -132,8 +106,7 @@ def main():
     set_gain(mscope, 0)
 
     # run timelapse loop with input parameters
-    # video_filename_list = shoot_timelapse(mscope, video_dirname, total_snapshots = 5, period_sec = 3)
-    shoot_timelapse(mscope, image_dirname, total_snapshots = 5, period_sec = 3)
+    image_filename_list = shoot_timelapse(mscope, image_dirname, total_snapshots = 5, period_sec = 1)
 
     # merge snapshots into a single video
     # merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
