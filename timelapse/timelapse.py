@@ -55,9 +55,6 @@ def take_photo(m, image_fn, nbuffer_frames = 50):
     while m.is_running and nframes < nbuffer_frames:
         frame = m.current_disp_frame
         if frame is not None:
-            # cv2.imshow('Miniscope Display', frame)
-            # cv2.waitKey(50)
-            # print("recorded frame", nframes)
             nframes += 1
     cv2.imwrite(image_fn, frame)
 
@@ -75,10 +72,14 @@ def take_zstack(m, image_dir, snapshot_num, zparams, led, gain):
 def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitation_strength = 20, gain = 0):
     '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
 
+    print()
+    print('----------')
     print("Starting time lapse recording.")
     print("\tTotal snapshots = " + str(total_snapshots))
     print("\tPeriod (sec) = " + str(period_sec))
     print("\tZ-Stack settings = " + str(zparams))
+    print('----------')
+    print()
 
     nsnapshots = 0
     filenames = [None] * total_snapshots
@@ -88,6 +89,7 @@ def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitati
         set_led(m, excitation_strength)
 
         # take a z-stack at the current state
+        print()
         print("Taking z-stack " + str(nsnapshots) + " ...")
         take_zstack(m, image_dir, nsnapshots, zparams, excitation_strength, gain)
         
@@ -97,13 +99,18 @@ def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitati
         nsnapshots += 1
 
         if nsnapshots < total_snapshots:
-            print("Waiting", period_sec, "seconds to take next snapshot ...")
+            print()
+            print("Waiting", period_sec, "seconds to take next z-stack ...")
             time.sleep(period_sec)
 
     # stop recording and running miniscope
     m.stop()
 
+    print()
+    print('----------')
     print("Time lapse recording finished.")
+    print('----------')
+    print()
 
     return filenames
 
