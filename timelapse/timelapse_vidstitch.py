@@ -40,51 +40,43 @@ def shoot_video(m, duration_sec, vidfn):
 
     m.stop_recording()
 
-def take_photo(m, imagefn):
-    '''Take a photo with the Miniscope'''
-    frame = m.current_disp_frame
-    cv2.imwrite(imagefn, frame)
-
-def shoot_timelapse(m, vid_dir, total_snapshots, period_sec):
-    '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
+def shoot_timelapse(m, vid_dir, total_snapshots, period_sec, snapshot_duration_sec = 2):
+    '''Shoot a timelapse, which will be a folder full of short video files, to be concatenated afterwards'''
 
     # TODO: add z-stack function... need to decide how to organize clips
 
     print_recording_info(m, vid_dir)
 
-    # just shoot one image for now
-    set_led(m, 20)
-
-    take_photo(m, "miniscope_test_0.jpg")
-
+    # # just shoot video for 5 seconds for now
+    # set_led(m, 20)
     # shoot_video(m, 5)
 
-    # # time lapse loop
-    # print("Starting time lapse recording. Total snapshots=", total_snapshots, ": snapshot duration (sec)=", snapshot_duration_sec, ": period (sec)=", period_sec)
-    # nsnapshots = 0
-    # filenames = [None] * total_snapshots
-    # while nsnapshots < total_snapshots:
-    #     print("Taking snapshot", nsnapshots, "...")
+    # time lapse loop
+    print("Starting time lapse recording. Total snapshots=", total_snapshots, ": snapshot duration (sec)=", snapshot_duration_sec, ": period (sec)=", period_sec)
+    nsnapshots = 0
+    filenames = [None] * total_snapshots
+    while nsnapshots < total_snapshots:
+        print("Taking snapshot", nsnapshots, "...")
 
-    #     # turn the LED on
-    #     set_led(m, 20)
+        # turn the LED on
+        set_led(m, 20)
 
-    #     # record for a few seconds
-    #     snapshot_filename = 'miniscope_snapshot_' + str(nsnapshots) + '.mkv'
-    #     vid_path = os.path.join(vid_dir, snapshot_filename)
-    #     filenames[nsnapshots] = vid_path
-    #     # print('video path: ' + vid_path)
-    #     shoot_video(m, snapshot_duration_sec, vid_path)
+        # record for a few seconds
+        snapshot_filename = 'miniscope_snapshot_' + str(nsnapshots) + '.mkv'
+        vid_path = os.path.join(vid_dir, snapshot_filename)
+        filenames[nsnapshots] = vid_path
+        # print('video path: ' + vid_path)
+        shoot_video(m, snapshot_duration_sec, vid_path)
         
-    #     # turn the LED off
-    #     set_led(m, 0)
+        # turn the LED off
+        set_led(m, 0)
         
-    #     nsnapshots += 1
+        nsnapshots += 1
 
-    #     if nsnapshots < total_snapshots:
-    #         print("Waiting", snapshot_duration_sec, "seconds to take next snapshot ...")
-    #         # wait period_sec seconds for next snapshot
-    #         time.sleep(period_sec)
+        if nsnapshots < total_snapshots:
+            print("Waiting", snapshot_duration_sec, "seconds to take next snapshot ...")
+            # wait period_sec seconds for next snapshot
+            time.sleep(period_sec)
 
 
     # stop recording and running miniscope
@@ -92,8 +84,7 @@ def shoot_timelapse(m, vid_dir, total_snapshots, period_sec):
 
     print("Time lapse recording finished.")
 
-    # return filenames
-    return
+    return filenames
 
 def merge_snapshots(vid_dir, vid_fn_list, ffmpeg_path, merged_vid_name):
     '''Use ffmpeg to merge the miniscope snapshots into a single video'''
@@ -112,12 +103,12 @@ def main():
     miniscope_name = 'Miniscope_V4_BNO'  # The device type we want to connect to
     daq_id = 0  # the video device ID of our DAQ box
     # video_filename = '/mnt/c/Users/agroo/niko_miniscope_vids/miniscope-test.mkv' # video file location
-    image_dirname = '/home/agroo/niko_miniscope_vids/timelapse_test'
-    os.makedirs(image_dirname, exist_ok = True)
+    video_dirname = '/home/agroo/niko_miniscope_vids/timelapse_test'
+    os.makedirs(video_dirname, exist_ok = True)
 
     ffmpeg_path = '/home/agroo/src/ffmpeg-git-20240301-amd64-static/ffmpeg'
     date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
-    final_merged_video_name = 'miniscope_timelapse_merged_' + date_sec + '.mp4'
+    final_merged_video_name = 'miniscope_timelapse_merged_' + date_sec + '.mkv'
 
     # create new Miniscope instance
     mscope = Miniscope()
@@ -131,11 +122,10 @@ def main():
     set_gain(mscope, 0)
 
     # run timelapse loop with input parameters
-    # video_filename_list = shoot_timelapse(mscope, video_dirname, total_snapshots = 5, period_sec = 3)
-    shoot_timelapse(mscope, image_dirname, total_snapshots = 5, period_sec = 3)
+    video_filename_list = shoot_timelapse(mscope, video_dirname, total_snapshots = 5, period_sec = 3)
 
     # merge snapshots into a single video
-    # merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
+    merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
 
     # handle errors, if they happened
     if mscope.last_error:
