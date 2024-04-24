@@ -40,22 +40,22 @@ def shoot_video(m, duration_sec, vidfn):
 
     m.stop_recording()
 
-def take_photo(m, imagefn):
+def take_photo(m, image_dir, image_fn):
     '''Take a photo with the Miniscope'''
     frame = m.current_disp_frame
-    cv2.imwrite(imagefn, frame)
+    cv2.imwrite(os.path.join(image_dir, image_fn), frame)
 
-def shoot_timelapse(m, vid_dir, total_snapshots, period_sec):
+def shoot_timelapse(m, image_dir, total_snapshots, period_sec):
     '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
 
     # TODO: add z-stack function... need to decide how to organize clips
 
-    print_recording_info(m, vid_dir)
+    print_recording_info(m, image_dir)
 
     # just shoot one image for now
     set_led(m, 20)
 
-    take_photo(m, "miniscope_test_0.jpg")
+    take_photo(m, image_dir, "miniscope_test_0.jpg")
 
     # shoot_video(m, 5)
 
@@ -86,6 +86,7 @@ def shoot_timelapse(m, vid_dir, total_snapshots, period_sec):
     #         # wait period_sec seconds for next snapshot
     #         time.sleep(period_sec)
 
+    set_led(m, 0)
 
     # stop recording and running miniscope
     m.stop()
