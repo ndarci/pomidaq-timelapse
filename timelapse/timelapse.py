@@ -141,8 +141,8 @@ def main():
     date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
     os.makedirs(image_dir_now, exist_ok = True)
-    zstack_parameters = {'start': -120, 'end': 120, 'step': 30}
-    image_filename_list = shoot_timelapse(mscope, image_dir = image_dir_now, zparams = zstack_parameters, total_snapshots = 5, period_sec = 1)
+    zstack_parameters = {'start': -120, 'end': 120, 'step': 120}
+    image_filename_list = shoot_timelapse(mscope, image_dir = image_dir_now, zparams = zstack_parameters, total_snapshots = 2, period_sec = 1)
 
     # merge snapshots into a single video
     # final_merged_video_name = 'miniscope_timelapse_merged_' + date_sec + '.mp4'
