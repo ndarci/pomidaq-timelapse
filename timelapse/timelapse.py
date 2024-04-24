@@ -5,7 +5,7 @@
 # define key strings for setup and recording
 MINISCOPE_NAME = 'Miniscope_V4_BNO'  # the device type we want to connect to
 DAQ_ID = 0  # the video device ID of our DAQ box
-IMAGE_DIRNAME = '/home/agroo/niko_miniscope_vids/timelapse_test' # path to the folder we will store time lapse images in
+BASE_IMAGE_DIRNAME = '/home/agroo/niko_miniscope_vids/timelapse_test' # path to the folder we will store time lapse images in
 FFMPEG_PATH = '/home/agroo/src/ffmpeg-git-20240301-amd64-static/ffmpeg' # path to ffmpeg installation
 
 import time
@@ -21,6 +21,27 @@ from miniscope import Miniscope, ControlKind
 
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
+
+def generate_file_path(image_dir, snapshot_num, z_index, focus, led, gain):
+    '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
+
+    # TODO: get a precise timestamp of when the image was taken, store that in name or metadata
+
+    # get rid of dashes in negative focus dists for filepath
+    if focus < 0:
+        focus_str = 'neg' + str(abs(focus))
+    else:
+        focus_str = str(focus)
+
+    # put each z level in its own directory
+    z_dir = 'z' + str(z_index) + '_' + focus_str
+    if not os.path.exists(os.path.join(image_dir, z_dir)):
+        os.makedirs(os.path.join(image_dir, z_dir))
+
+    # get all the relevant image info into the final filename
+    img_name = 'miniscope_t' + str(snapshot_num) + '_z' + focus_str + '_led' + str(led) + '_gain' + str(gain) + '.jpg'
+    
+    return os.path.join(image_dir, z_dir, img_name)
 
 def take_photo(m, image_fn, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
@@ -40,18 +61,18 @@ def take_photo(m, image_fn, nbuffer_frames = 50):
             nframes += 1
     cv2.imwrite(image_fn, frame)
 
-def take_zstack(m, image_dir, snapshot_num, zparams):
+def take_zstack(m, image_dir, snapshot_num, zparams, led, gain):
     '''Shoot a z-stack of photos with the Miniscope'''
 
     current_focus = zparams['start']
-
+    z_index = 0
     while current_focus <= zparams['end']:
-        final_image_path = os.path.join(image_dir, 'snapshot' + str(snapshot_num) + '_z' + str(current_focus) + '.jpg')
         set_focus(m, current_focus)
-        take_photo(m, final_image_path)
+        take_photo(m, generate_file_path(image_dir, snapshot_num, z_index, current_focus, led, gain))
         current_focus += zparams['step']
+        z_index += 1
 
-def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitation_strength = 20):
+def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitation_strength = 20, gain = 0):
     '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
 
     print("Starting time lapse recording.")
@@ -68,7 +89,7 @@ def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitati
 
         # take a z-stack at the current state
         print("Taking z-stack " + str(nsnapshots) + " ...")
-        take_zstack(m, image_dir, nsnapshots, zparams)
+        take_zstack(m, image_dir, nsnapshots, zparams, excitation_strength, gain)
         
         # turn the LED off
         set_led(m, 0)
@@ -110,18 +131,15 @@ def main():
     set_gain(mscope, 0)
 
     # run timelapse loop and save all snapshots
-    os.makedirs(IMAGE_DIRNAME, exist_ok = True)
+    date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
+    image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
+    os.makedirs(image_dir_now, exist_ok = True)
     zstack_parameters = {'start': -120, 'end': 120, 'step': 30}
-    image_filename_list = shoot_timelapse(mscope, image_dir = IMAGE_DIRNAME, zparams = zstack_parameters, total_snapshots = 1, period_sec = 1)
+    image_filename_list = shoot_timelapse(mscope, image_dir = image_dir_now, zparams = zstack_parameters, total_snapshots = 5, period_sec = 1)
 
     # merge snapshots into a single video
-    # date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
     # final_merged_video_name = 'miniscope_timelapse_merged_' + date_sec + '.mp4'
     # merge_snapshots(video_dirname, video_filename_list, ffmpeg_path, final_merged_video_name)
-
-    # handle errors, if they happened
-    if mscope.last_error:
-        print('Error while acquiring data from Miniscope: {}'.format(mscope.last_error), file=sys.stderr)
 
     # disconnect from scope 
     mscope.disconnect()
