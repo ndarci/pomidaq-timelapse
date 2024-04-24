@@ -136,15 +136,16 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
     for z_dir in img_fn_dict.keys():
         merged_video_name = 'miniscope_timelapse_' + params_to_suffix(z_dir, led, gain) + '.mp4'
+        merged_video_path = os.path.join(img_dir, z_dir, merged_video_name)
         subprocess.call([ffmpeg_path, \
-                        '-framerate', '30', \
+                        '-framerate', '5', \
                         '-pattern_type', 'glob', \
                         '-i', img_dir + '/' + z_dir + '/*.jpg', \
-                        '-s:v', '680x680', \
-                        '-c:v', 'libx264', \
-                        '-crf', '17', \
-                        '-pix_fmt', 'yuv420p', \
-                        merged_video_name])
+                        # '-s:v', '680x680', \
+                        # '-c:v', 'libx264', \
+                        # '-crf', '17', \
+                        # '-pix_fmt', 'yuv420p', \
+                        merged_video_path])
 
 def main():
     # create new Miniscope instance
@@ -162,7 +163,7 @@ def main():
     date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
     os.makedirs(image_dir_now, exist_ok = True)
-    zstack_parameters = {'start': -120, 'end': 120, 'step': 240}
+    zstack_parameters = {'start': -45, 'end': 45, 'step': 45}
     excitation_strength = 20
     gain = 0
     image_filename_dict = shoot_timelapse(mscope, \
@@ -170,10 +171,10 @@ def main():
                                             zparams = zstack_parameters, \
                                             excitation_strength = excitation_strength, \
                                             gain = gain, \
-                                            total_timesteps = 2, \
+                                            total_timesteps = 10, \
                                             period_sec = 1)
 
-    print(image_filename_dict)
+    # print(image_filename_dict)
 
     # merge images into a time lapse video
     merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
