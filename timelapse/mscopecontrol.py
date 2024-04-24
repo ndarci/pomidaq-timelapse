@@ -1,3 +1,8 @@
+# led0 - excitation, default 0
+# ewl - focus distance, default 0
+# gain - gain, default "Low"
+# frameRate - frame rate, default 30
+
 import time
 
 def set_led(m, val):
