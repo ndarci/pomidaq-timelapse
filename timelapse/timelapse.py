@@ -25,7 +25,7 @@ from mscopecontrol import set_led, set_focus, set_gain
 def generate_file_path(image_dir, snapshot_num, z_index, focus, led, gain):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
-    # TODO: get a precise timestamp of when the image was taken, store that in name or metadata
+    # TODO: get a precise timestamp of when the image was taken, store in name or metadata
 
     # get rid of dashes in negative focus dists for filepath
     if focus < 0:
@@ -46,8 +46,7 @@ def generate_file_path(image_dir, snapshot_num, z_index, focus, led, gain):
 def take_photo(m, image_fn, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
 
-    # TODO: somehow control for the frames that are all covered in horizontal lines
-
+    # TODO: somehow control for the frames that are all covered in horizontal lines?
     # TODO: get rid of little BNO indicator logo in bottom corner
 
     # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
@@ -60,7 +59,6 @@ def take_photo(m, image_fn, nbuffer_frames = 50):
 
 def take_zstack(m, image_dir, snapshot_num, zparams, led, gain):
     '''Shoot a z-stack of photos with the Miniscope'''
-
     current_focus = zparams['start']
     z_index = 0
     while current_focus <= zparams['end']:
@@ -69,28 +67,31 @@ def take_zstack(m, image_dir, snapshot_num, zparams, led, gain):
         current_focus += zparams['step']
         z_index += 1
 
+def print_hline():
+    print('--------------------')
+
 def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitation_strength = 20, gain = 0):
-    '''Shoot a timelapse, which will be a folder full of image files, to be concatenated afterwards'''
+    '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
     print()
-    print('----------')
+    print_hline()
     print("Starting time lapse recording.")
     print("\tTotal snapshots = " + str(total_snapshots))
     print("\tPeriod (sec) = " + str(period_sec))
     print("\tZ-Stack settings = " + str(zparams))
-    print('----------')
-    print()
+    print_hline()
 
     nsnapshots = 0
     filenames = [None] * total_snapshots
     # time lapse loop
     while nsnapshots < total_snapshots:
+        print()
+        print("Taking z-stack " + str(nsnapshots) + " ...")
+        
         # turn the LED on
         set_led(m, excitation_strength)
 
         # take a z-stack at the current state
-        print()
-        print("Taking z-stack " + str(nsnapshots) + " ...")
         take_zstack(m, image_dir, nsnapshots, zparams, excitation_strength, gain)
         
         # turn the LED off
@@ -107,9 +108,9 @@ def shoot_timelapse(m, image_dir, zparams, total_snapshots, period_sec, excitati
     m.stop()
 
     print()
-    print('----------')
+    print_hline() 
     print("Time lapse recording finished.")
-    print('----------')
+    print_hline()
     print()
 
     return filenames
