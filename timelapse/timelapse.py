@@ -22,27 +22,30 @@ from miniscope import Miniscope, ControlKind
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
-def z_int_to_string(z_int):
-    '''Convert a z-level integer to a friendlier string for filepaths'''
+def z_int_to_string(z_index, focus):
+    '''Convert a z-level integer and its index to a friendlier string for filepaths'''
     # get rid of dashes in negatives
-    if z_int < 0:
-        focus_str = 'neg' + str(abs(z_int))
+    if focus < 0:
+        focus_str = 'neg' + str(abs(focus))
     else:
-        focus_str = str(z_int)
-    z_str = 'z' + str(z_int) + '_' + focus_str
+        focus_str = str(focus)
+    z_str = 'z' + str(z_index) + '-' + focus_str
     return z_str
+
+def params_to_suffix(z_str, led, gain):
+    return z_str + '_led' + str(led) + '_gain' + str(gain)
 
 def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
     # TODO: get a precise timestamp of when the image was taken, store in name or metadata
 
-    z_dir = z_int_to_string(focus)
+    z_dir = z_int_to_string(z_index, focus)
     if not os.path.exists(os.path.join(image_dir, z_dir)):
         os.makedirs(os.path.join(image_dir, z_dir))
 
     # get all the relevant image info into the final filename
-    img_name = 'miniscope_t' + str(time_step) + '_z' + focus_str + '_led' + str(led) + '_gain' + str(gain) + '.jpg'
+    img_name = 'miniscope_t' + str(time_step) + '_' + params_to_suffix(z_dir, led, gain) + '.jpg'
     
     return os.path.join(image_dir, z_dir, img_name)
 
@@ -79,7 +82,7 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
 def print_hline():
     print('--------------------')
 
-def shoot_timelapse(m, image_dir, zparams, total_timesteps, period_sec, excitation_strength = 20, gain = 0):
+def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
     print()
@@ -127,10 +130,11 @@ def shoot_timelapse(m, image_dir, zparams, total_timesteps, period_sec, excitati
 
     return filenames
 
-def merge_timelapse(img_dir, img_fn_dict, ffmpeg_path):
+def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
     for z in img_fn_dict.keys():
         z_dir = z_int_to_string(z)
+        merged_video_name = 'miniscope_timelapse_' + params_to_suffix(z_dir, led, gain) + '.mp4'
         subprocess.call([ffmpeg_path, \
                         '-framerate', '30', \
                         '-pattern_type', 'glob', \
@@ -139,13 +143,7 @@ def merge_timelapse(img_dir, img_fn_dict, ffmpeg_path):
                         '-c:v', 'libx264', \
                         '-crf', '17', \
                         '-pix_fmt', 'yuv420p', \
-                        'miniscope_timelapse_merged'])
-
-
-    ~/src/ffmpeg-git-20240301-amd64-static/ffmpeg -framerate 30 -pattern_type glob -i "folder-with-photos/*.jpg" -s:v 680x680 -c:v libx264 -crf 17 -pix_fmt yuv420p my-timelapse.mp4
-
-    # call ffmpeg in concat mode on the list of image files
-    subprocess.call([ffmpeg_path, '-f', 'concat', '-safe', '0', '-i', os.path.join(vid_dir, 'merge_file_names.txt'), '-c', 'copy', os.path.join(vid_dir, merged_vid_name)])
+                        merged_video_name])
 
 def main():
     # create new Miniscope instance
@@ -163,13 +161,21 @@ def main():
     date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
     os.makedirs(image_dir_now, exist_ok = True)
-    zstack_parameters = {'start': -120, 'end': 120, 'step': 120}
-    image_filename_dict = shoot_timelapse(mscope, image_dir = image_dir_now, zparams = zstack_parameters, total_timesteps = 2, period_sec = 1)
+    zstack_parameters = {'start': -120, 'end': 120, 'step': 240}
+    excitation_strength = 20
+    gain = 0
+    image_filename_dict = shoot_timelapse(mscope, \
+                                            image_dir = image_dir_now, \
+                                            zparams = zstack_parameters, \
+                                            excitation_strength = excitation_strength, \
+                                            gain = gain, \
+                                            total_timesteps = 2, \
+                                            period_sec = 1)
 
-    print(image_filename_dict)
+    # print(image_filename_dict)
 
     # merge images into a time lapse video
-    merge_timelapse(image_dir_now, image_filename_dict, FFMPEG_PATH)
+    merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
 
     # disconnect from scope 
     mscope.disconnect()
