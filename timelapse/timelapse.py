@@ -170,16 +170,12 @@ def main():
     
     args = parser.parse_args()
 
-    print(args)
-    print(args.film)
-    print(args.merge)
-    print(args.excitation)
-    print(args.gain)
-    print(args.zstack)
-
-    return
-
-    return
+    # print(args)
+    # print(args.film)
+    # print(args.merge)
+    # print(args.excitation)
+    # print(args.gain)
+    # print(args.zstack)
 
     if args.merge is not None: # merge mode
         print('Running in merge mode. All other parameters are ignored.')
