@@ -170,9 +170,13 @@ def main():
     args = parser.parse_args()
 
     print(args)
+    print(args.film)
+    print(args.merge)
     print(args.excitation)
     print(args.gain)
     print(args.zstack)
+
+    return
 
     # create new Miniscope instance
     mscope = Miniscope()
