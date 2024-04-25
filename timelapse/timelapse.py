@@ -14,6 +14,7 @@ import os
 import sys
 import cv2
 import subprocess
+import argparse
 
 # tell python where compiled miniscope module is installed
 sys.path.append('/lib/python3.10/dist-packages/')
@@ -151,6 +152,15 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
                         merged_video_path])
 
 def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-e', '--excitation', type = int, default = 20, help = 'LED excitation strength (0-100, default 20)')
+
+    args = parser.parse_args()
+
+    print(args)
+    print(args.excitation)
+
     # create new Miniscope instance
     mscope = Miniscope()
 
@@ -165,9 +175,9 @@ def main():
     # run timelapse loop and save all images
     date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
     image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
-    os.makedirs(image_dir_now, exist_ok = True)
+    os.makedirs(image_dir_now)
     zstack_parameters = {'start': -45, 'end': 45, 'step': 45}
-    excitation_strength = 20
+    excitation_strength = args.excitation
     gain = 0
     image_filename_dict = shoot_timelapse(mscope, \
                                             image_dir = image_dir_now, \
