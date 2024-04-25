@@ -155,11 +155,15 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-e', '--excitation', type = int, default = 20, help = 'LED excitation strength (0-100, default 20)')
+    parser.add_argument('-g', '--gain', type = int, default = 0, help = 'Gain applied to output images (0-2, default 0)')
+    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 30], help = 'Z-stack start, end, and step for each timepoint (-127-127, default [-120, 120, 30])')
 
     args = parser.parse_args()
 
     print(args)
     print(args.excitation)
+    print(args.gain)
+    print(args.zstack)
 
     # create new Miniscope instance
     mscope = Miniscope()
