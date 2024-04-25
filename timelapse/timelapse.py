@@ -154,10 +154,19 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-e', '--excitation', type = int, default = 20, help = 'LED excitation strength (0-100, default 20)')
-    parser.add_argument('-g', '--gain', type = int, default = 0, help = 'Gain applied to output images (0-2, default 0)')
-    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 30], help = 'Z-stack start, end, and step for each timepoint (-127-127, default [-120, 120, 30])')
+    help_f = '''Run the program in film mode, which will shoot a time lapse video at each z-level and write an index file of image paths for the merge function.'''
+    help_m = '''Run the program in merge mode, after filming a time lapse. Provide the path to the image index file produced by running the program in film mode.'''
+    help_e = '''LED excitation strength (0 - 100, default 20)'''
+    help_g = '''Gain applied to output images (0 - 2, default 0)'''
+    help_z = '''Z-stack start, end, and step for each timepoint (-127 - 127, default [-120, 120, 30])'''
 
+    parser.add_argument('-f', '--film', action = 'store_true', default = True, help = help_f)
+    parser.add_argument('-m', '--merge', type = str, required = False, help = help_m)
+
+    parser.add_argument('-e', '--excitation', type = int, default = 20, help = help_e)
+    parser.add_argument('-g', '--gain', type = int, default = 0, help = help_g)
+    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 30], help = help_z)
+    
     args = parser.parse_args()
 
     print(args)
