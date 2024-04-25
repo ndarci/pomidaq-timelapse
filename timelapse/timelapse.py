@@ -155,17 +155,18 @@ def main():
     parser = argparse.ArgumentParser()
 
     help_f = '''Run the program in film mode, which will shoot a time lapse video at each z-level and write an index file of image paths for the merge function.'''
-    help_m = '''Run the program in merge mode, after filming a time lapse. Provide the path to the image index file produced by running the program in film mode.'''
     help_e = '''LED excitation strength (0 - 100, default 20)'''
     help_g = '''Gain applied to output images (0 - 2, default 0)'''
     help_z = '''Z-stack start, end, and step for each timepoint (-127 - 127, default [-120, 120, 30])'''
 
-    parser.add_argument('-f', '--film', action = 'store_true', default = True, help = help_f)
-    parser.add_argument('-m', '--merge', type = str, required = False, help = help_m)
+    help_m = '''Run the program in merge mode, after filming a time lapse. Provide the path to the image index file produced by running the program in film mode.'''
 
+    parser.add_argument('-f', '--film', action = 'store_true', default = True, help = help_f)
     parser.add_argument('-e', '--excitation', type = int, default = 20, help = help_e)
     parser.add_argument('-g', '--gain', type = int, default = 0, help = help_g)
     parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 30], help = help_z)
+
+    parser.add_argument('-m', '--merge', type = str, required = False, help = help_m)
     
     args = parser.parse_args()
 
@@ -178,41 +179,46 @@ def main():
 
     return
 
-    # create new Miniscope instance
-    mscope = Miniscope()
+    return
 
-    # run some diagnostics and start it running
-    setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
+    if args.merge is not None: # merge mode
+        print('Running in merge mode. All other parameters are ignored.')
+        print('Merging timelapse images in directory: ' + args.merge + ' ...')
 
-    # set initial control levels
-    set_led(mscope, 0)
-    set_focus(mscope, 0)
-    set_gain(mscope, 0)
+        # merge images into a time lapse video
+        merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
 
-    # run timelapse loop and save all images
-    date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
-    image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
-    os.makedirs(image_dir_now)
-    zstack_parameters = {'start': -45, 'end': 45, 'step': 45}
-    excitation_strength = args.excitation
-    gain = 0
-    image_filename_dict = shoot_timelapse(mscope, \
-                                            image_dir = image_dir_now, \
-                                            zparams = zstack_parameters, \
-                                            excitation_strength = excitation_strength, \
-                                            gain = gain, \
-                                            total_timesteps = 10, \
-                                            period_sec = 1)
+        print('Merge complete!')
+    else: # film mode
+        # create new Miniscope instance
+        mscope = Miniscope()
 
-    # print(image_filename_dict)
+        # run some diagnostics and start it running
+        setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
 
-    # merge images into a time lapse video
-    merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
+        # prep image directory and initial parameters
+        date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
+        image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
+        os.makedirs(image_dir_now)
+        excitation_strength = args.excitation
+        gain = args.gain
+        set_gain(mscope, gain) # gain is constant
+        zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
 
-    # disconnect from scope 
-    mscope.disconnect()
+        # run timelapse and save all images
+        image_filename_dict = shoot_timelapse(mscope, \
+                                                image_dir = image_dir_now, \
+                                                zparams = zstack_parameters, \
+                                                excitation_strength = excitation_strength, \
+                                                gain = gain, \
+                                                total_timesteps = 10, \
+                                                period_sec = 1)
 
-    # cv2.destroyAllWindows()
+        # write image filenames to an index file for merge function
+
+
+        # disconnect from scope 
+        mscope.disconnect()
 
     return
 
