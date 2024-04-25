@@ -80,6 +80,23 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
         
     return filenames
 
+def write_image_index(img_dir, img_fn_dict):
+    outfile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'w')
+    for z_dir, img_paths in img_fn_dict.items():
+        outfile.write(z_dir + ',' + ','.join(img_paths) + '\n')
+    outfile.close()
+
+def read_image_index(img_dir):
+    infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
+    img_fn_dict = {}
+    for line in infile:
+        splitline = line.strip().split(',')
+        z_dir = splitline[0]
+        img_paths = splitline[1:]
+        img_fn_dict[z_dir] = img_paths
+    return img_fn_dict
+
+
 def print_hline():
     print('--------------------')
 
@@ -133,13 +150,18 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     return filenames
 
-def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
+def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
 
-    # TODO: make this into a separate script, so that images can be collected and merged after... need to write an index of filenames somewhere
+    # slice up the filename of the first image file to extract the led and gain parameters
+    # fine to take the first bc these are constants for the whole timelapse
+    key0 = list(img_fn_dict.keys())[0]
+    filename0 = img_fn_dict[key0][0]
+    suffixlist = filename0.split('.')[0].split('_')[-3:]
+    suffix = '_'.join(suffixlist)
 
     for z_dir in img_fn_dict.keys():
-        merged_video_name = 'miniscope_timelapse_' + params_to_suffix(z_dir, led, gain) + '.mp4'
+        merged_video_name = 'miniscope_timelapse_' + suffix + '.mp4'
         merged_video_path = os.path.join(img_dir, z_dir, merged_video_name)
         subprocess.call([ffmpeg_path, \
                         '-framerate', '5', \
@@ -154,38 +176,30 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, led, gain):
 def main():
     parser = argparse.ArgumentParser()
 
-    help_f = '''Run the program in film mode, which will shoot a time lapse video at each z-level and write an index file of image paths for the merge function.'''
-    help_e = '''LED excitation strength (0 - 100, default 20)'''
-    help_g = '''Gain applied to output images (0 - 2, default 0)'''
-    help_z = '''Z-stack start, end, and step for each timepoint (-127 - 127, default [-120, 120, 30])'''
+    help_m = '''Film mode shoots a series of time lapse videos at each z-level 
+                and saves them in structured directories. Merge mode performs the second step only,
+                merging a previously shot set of images into a video (default 'film').'''
+    help_d = '''Base directory to write output images and merged videos.'''
+    help_e = '''LED excitation strength (0 - 100).'''
+    help_g = '''Gain applied to output images (0 - 2).'''
+    help_z = '''Z-stack start, end, and step for each timepoint (-127 - +127).'''
+    help_t = '''Number of time steps to record in the time lapse.'''
+    help_p = '''Period between time lapse snapshots, in seconds.'''
 
-    help_m = '''Run the program in merge mode, after filming a time lapse. Provide the path to the image index file produced by running the program in film mode.'''
-
-    parser.add_argument('-f', '--film', action = 'store_true', default = True, help = help_f)
+    parser.add_argument('mode', type = str, choices = ['film', 'merge'], default = 'film', help = help_m)
+    parser.add_argument('-d', '--directory', type = str, default = BASE_IMAGE_DIRNAME, help = help_d)
     parser.add_argument('-e', '--excitation', type = int, default = 20, help = help_e)
     parser.add_argument('-g', '--gain', type = int, default = 0, help = help_g)
-    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 30], help = help_z)
-
-    parser.add_argument('-m', '--merge', type = str, required = False, help = help_m)
+    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 10], help = help_z)
+    parser.add_argument('-t', '--timesteps', type = int, default = 10, help = help_t)
+    parser.add_argument('-p', '--period', type = int, default = 60, help = help_p)
     
     args = parser.parse_args()
 
-    # print(args)
-    # print(args.film)
-    # print(args.merge)
-    # print(args.excitation)
-    # print(args.gain)
-    # print(args.zstack)
+    if args.mode == 'merge' and args.directory == BASE_IMAGE_DIRNAME:
+        parser.error('merge mode requires a previously filmed image directory passed to -d.')
 
-    if args.merge is not None: # merge mode
-        print('Running in merge mode. All other parameters are ignored.')
-        print('Merging timelapse images in directory: ' + args.merge + ' ...')
-
-        # merge images into a time lapse video
-        merge_timelapse(FFMPEG_PATH, image_dir_now, image_filename_dict, excitation_strength, gain)
-
-        print('Merge complete!')
-    else: # film mode
+    if args.mode == 'film': # film mode
         # create new Miniscope instance
         mscope = Miniscope()
 
@@ -193,28 +207,47 @@ def main():
         setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
 
         # prep image directory and initial parameters
-        date_sec = datetime.now().strftime("%Y%m%d_%H%M%S")
-        image_dir_now = BASE_IMAGE_DIRNAME + '_' + str(date_sec)
+        date_sec = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        image_dir_now = args.directory + '_' + str(date_sec)
         os.makedirs(image_dir_now)
-        excitation_strength = args.excitation
-        gain = args.gain
-        set_gain(mscope, gain) # gain is constant
+        set_gain(mscope, args.gain) # gain is constant
         zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
 
         # run timelapse and save all images
         image_filename_dict = shoot_timelapse(mscope, \
                                                 image_dir = image_dir_now, \
                                                 zparams = zstack_parameters, \
-                                                excitation_strength = excitation_strength, \
-                                                gain = gain, \
-                                                total_timesteps = 10, \
-                                                period_sec = 1)
+                                                excitation_strength = args.excitation, \
+                                                gain = args.gain, \
+                                                total_timesteps = args.timesteps, \
+                                                period_sec = args.period)
 
         # write image filenames to an index file for merge function
-        print(image_filename_dict)
+        write_image_index(image_dir_now, image_filename_dict)
+
+        # print(image_filename_dict)
+        # print()
+        # print(read_image_index(image_dir_now))
 
         # disconnect from scope 
         mscope.disconnect()
+
+        # tell the merge function where to find the image index file
+        merge_dir = image_dir_now
+    else:
+        print()
+        print('Running in merge mode only. Filming parameters are ignored.')
+        merge_dir = args.directory
+    
+    print()
+    print('Merging timelapse images in directory: ' + merge_dir + ' ... ')
+    print()
+
+    # merge images into a time lapse video
+    merge_timelapse(FFMPEG_PATH, merge_dir, read_image_index(merge_dir))
+
+    print()
+    print('Merge complete!')
 
     return
 
