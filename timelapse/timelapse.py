@@ -211,7 +211,7 @@ def main():
                                                 period_sec = 1)
 
         # write image filenames to an index file for merge function
-
+        print(image_filename_dict)
 
         # disconnect from scope 
         mscope.disconnect()
