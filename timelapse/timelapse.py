@@ -39,7 +39,7 @@ def params_to_suffix(z_str, led, gain):
 def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
-    # TODO: get a precise timestamp of when the image was taken, store in name or metadata
+    # TODO: get a precise timestamp of when the image was taken, store in name or metadata... or a log file I save in parent direc? even a csv I could analyze?
 
     z_dir = z_int_to_string(z_index, focus)
     if not os.path.exists(os.path.join(image_dir, z_dir)):
