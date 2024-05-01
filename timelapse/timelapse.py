@@ -89,7 +89,7 @@ def take_photo(m, nbuffer_frames = 50):
     return frame
         
 
-def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
+def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, index_file):
     '''Shoot a z-stack of photos with the Miniscope'''
     current_focus = zparams['start']
     z_index = 0
@@ -103,17 +103,18 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
         else:
             logger.warning('Failed to take photo!')
 
-        filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
+        # filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
+        index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path)
         current_focus += zparams['step']
         z_index += 1
         
-    return filenames
+    # return filenames
 
-def write_image_index(img_dir, img_fn_dict):
-    outfile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'w')
-    for z_dir, img_paths in img_fn_dict.items():
-        outfile.write(z_dir + ',' + ','.join(img_paths) + '\n')
-    outfile.close()
+# def write_image_index(img_dir, img_fn_dict):
+#     outfile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'w')
+#     for z_dir, img_paths in img_fn_dict.items():
+#         outfile.write(z_dir + ',' + ','.join(img_paths) + '\n')
+#     outfile.close()
 
 def read_image_index(img_dir):
     infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
@@ -121,15 +122,18 @@ def read_image_index(img_dir):
     for line in infile:
         splitline = line.strip().split(',')
         z_dir = splitline[0]
-        img_paths = splitline[1:]
-        img_fn_dict[z_dir] = img_paths
+        img_path = splitline[1]
+        if z_dir not in img_fn_dict.keys():
+            img_fn_dict[z_dir] = [img_path]
+        else:
+            img_fn_dict[z_dir].append(img_path)
     return img_fn_dict
 
 
 def print_hline():
     print('--------------------')
 
-def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec):
+def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, index_file):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
     # print()
@@ -161,7 +165,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         set_led(m, excitation_strength)
 
         # take a z-stack at the current state
-        filenames = take_zstack(m, image_dir, timestep, zparams, excitation_strength, gain, filenames)
+        take_zstack(m, image_dir, timestep, zparams, excitation_strength, gain, filenames, index_file)
         
         # turn the LED off
         set_led(m, 0)
@@ -182,7 +186,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
     # print_hline()
     # print()
 
-    return filenames
+    # return filenames
 
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
@@ -287,16 +291,18 @@ def main():
         zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
 
         # run timelapse and save all images
-        image_filename_dict = shoot_timelapse(mscope, \
-                                                image_dir = image_dir_now, \
-                                                zparams = zstack_parameters, \
-                                                excitation_strength = args.excitation, \
-                                                gain = args.gain, \
-                                                total_timesteps = args.timesteps, \
-                                                period_sec = args.period)
+        index_file = open(os.path.join(image_dir_now, 'image_filename_index.csv'), 'w')
+        shoot_timelapse(mscope, \
+                        image_dir = image_dir_now, \
+                        zparams = zstack_parameters, \
+                        excitation_strength = args.excitation, \
+                        gain = args.gain, \
+                        total_timesteps = args.timesteps, \
+                        period_sec = args.period, \
+                        indexfile = index_file)
 
-        # write image filenames to an index file for merge function
-        write_image_index(image_dir_now, image_filename_dict)
+        # # write image filenames to an index file for merge function
+        # write_image_index(image_dir_now, image_filename_dict)
 
         # print(image_filename_dict)
         # print()
