@@ -1,0 +1,15 @@
+miniscope: Using backend API: V4L2
+miniscope: DAQ firmware ABI version: 685
+miniscope: Pixel Clock is 16.6
+miniscope: Control led0 value changed to 0
+miniscope: Control ewl value changed to 0
+miniscope: Control gain value changed to 1
+miniscope: Control frameRate value changed to 30
+miniscope: Status: Initialized camera 0
+miniscope: Save HOD: true
+miniscope: Control gain value changed to 2
+miniscope: Control led0 value changed to 50
+miniscope: Control ewl value changed to 0
+miniscope: Control ewl value changed to 10
+miniscope: Control led0 value changed to 0
+miniscope: Status: Disconnected camera 0

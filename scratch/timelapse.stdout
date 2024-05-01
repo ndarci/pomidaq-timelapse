@@ -1,0 +1,14 @@
+mscopesetup: 2024-05-01 16:29:37,103 | INFO | mscopesetup.py:60 | 16082 >>> Selecting Miniscope: Miniscope_V4_BNO
+mscopecontrol: 2024-05-01 16:29:38,726 | INFO | mscopecontrol.py:36 | 16082 >>> Setting gain control to 1
+__main__: 2024-05-01 16:29:39,727 | INFO | timelapse.py:136 | 16082 >>> Starting time lapse recording.
+__main__: 2024-05-01 16:29:39,727 | INFO | timelapse.py:137 | 16082 >>> Total timesteps = 1
+__main__: 2024-05-01 16:29:39,728 | INFO | timelapse.py:138 | 16082 >>> Period (sec) = 1
+__main__: 2024-05-01 16:29:39,728 | INFO | timelapse.py:139 | 16082 >>> Z-Stack settings = {'start': 0, 'end': 10, 'step': 10}
+__main__: 2024-05-01 16:29:39,728 | INFO | timelapse.py:150 | 16082 >>> Taking z-stack 0 ...
+mscopecontrol: 2024-05-01 16:29:40,729 | INFO | mscopecontrol.py:15 | 16082 >>> Setting excitation control to 50
+mscopecontrol: 2024-05-01 16:29:42,733 | INFO | mscopecontrol.py:25 | 16082 >>> Setting focus control to 0
+mscopecontrol: 2024-05-01 16:29:44,808 | INFO | mscopecontrol.py:25 | 16082 >>> Setting focus control to 10
+mscopecontrol: 2024-05-01 16:29:46,855 | INFO | mscopecontrol.py:15 | 16082 >>> Setting excitation control to 0
+__main__: 2024-05-01 16:29:47,860 | INFO | timelapse.py:170 | 16082 >>> Time lapse recording finished.
+__main__: 2024-05-01 16:29:47,866 | INFO | timelapse.py:300 | 16082 >>> Merging timelapse images in directory: /home/agroo/niko_miniscope_vids/log_test_2024-05-01_162937 ... 
+__main__: 2024-05-01 16:29:47,951 | INFO | timelapse.py:305 | 16082 >>> Merge complete!

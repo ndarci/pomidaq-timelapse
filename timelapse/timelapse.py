@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 sys.path.append('/lib/python3.10/dist-packages/')
 from miniscope import Miniscope, ControlKind
 
+from mscopeutil import stderr_redirected
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain
 
@@ -103,17 +104,11 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, index_fi
             logger.warning('Failed to take photo!')
 
         # filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
-        index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path)
+        index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + '\n')
         current_focus += zparams['step']
         z_index += 1
         
     # return filenames
-
-# def write_image_index(img_dir, img_fn_dict):
-#     outfile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'w')
-#     for z_dir, img_paths in img_fn_dict.items():
-#         outfile.write(z_dir + ',' + ','.join(img_paths) + '\n')
-#     outfile.close()
 
 def read_image_index(img_dir):
     infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
@@ -145,7 +140,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     # time lapse loop
     while timestep < total_timesteps:
-        logger.info("Taking z-stack " + str(timestep) + " ...")
+        logger.info("Taking z-stack " + str(timestep))
         
         # turn the LED on
         set_led(m, excitation_strength)
@@ -159,7 +154,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         timestep += 1
 
         if timestep < total_timesteps:
-            logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack ...")
+            logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack")
             time.sleep(period_sec)
 
     # stop recording and running miniscope
@@ -281,7 +276,7 @@ def main():
                             gain = args.gain, \
                             total_timesteps = args.timesteps, \
                             period_sec = args.period, \
-                            indexfile = index_file)
+                            index_file = index_file)
 
             # # write image filenames to an index file for merge function
             # write_image_index(image_dir_now, image_filename_dict)
@@ -289,13 +284,16 @@ def main():
             # disconnect from scope 
             mscope.disconnect()
 
+            # close index file
+            index_file.close()
+
         # tell the merge function where to find the image index file
         merge_dir = image_dir_now
     else:
         logger.info('Running in merge mode only. Filming parameters are ignored.')
         merge_dir = args.directory
     
-    logger.info('Merging timelapse images in directory: ' + merge_dir + ' ... ')
+    logger.info('Merging timelapse images in directory: ' + merge_dir)
 
     # merge images into a time lapse video
     merge_timelapse(FFMPEG_PATH, merge_dir, read_image_index(merge_dir))
@@ -305,4 +303,5 @@ def main():
     return
 
 if __name__ == '__main__':
-    main()
+    with stderr_redirected():
+        main()
