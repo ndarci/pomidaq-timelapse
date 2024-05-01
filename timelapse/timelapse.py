@@ -51,7 +51,7 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     
     return os.path.join(image_dir, z_dir, img_name)
 
-def take_photo(m, nbuffer_frames = 50):
+def take_photo(m, logger, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
 
     # TODO: somehow control for the frames that are all covered in horizontal lines?
@@ -74,20 +74,20 @@ def take_photo(m, nbuffer_frames = 50):
 
     # if it fails to grab a frame, disconnect and reconnect to scope
     if frame is None:
-        print()
-        print('Miniscope disconnected. Reconnecting...')
+        # print()
+        logger.warning('Miniscope disconnected. Reconnecting...')
         time.sleep(2)
         m.disconnect()
         setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
         time.sleep(2)
-        frame = take_photo(m)
+        # frame = take_photo(m)
 
     # fix this... returns a black frame when it disconnects
 
     return frame
         
 
-def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
+def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, logger):
     '''Shoot a z-stack of photos with the Miniscope'''
     current_focus = zparams['start']
     z_index = 0
@@ -95,11 +95,11 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
 
         set_focus(m, current_focus)
-        frame = take_photo(m)
+        frame = take_photo(m, logger)
         if frame is not None:
             cv2.imwrite(this_file_path, frame)
         else:
-            print('Failed to take photo!')
+            logger.warning('Failed to take photo!')
 
         filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
         current_focus += zparams['step']
@@ -127,16 +127,21 @@ def read_image_index(img_dir):
 def print_hline():
     print('--------------------')
 
-def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec):
+def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, logger):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
-    print()
-    print_hline()
-    print("Starting time lapse recording.")
-    print("\tTotal timesteps = " + str(total_timesteps))
-    print("\tPeriod (sec) = " + str(period_sec))
-    print("\tZ-Stack settings = " + str(zparams))
-    print_hline()
+    # print()
+    # print_hline()
+    # print("Starting time lapse recording.")
+    # print("\tTotal timesteps = " + str(total_timesteps))
+    # print("\tPeriod (sec) = " + str(period_sec))
+    # print("\tZ-Stack settings = " + str(zparams))
+    # print_hline()
+
+    logger.info("Starting time lapse recording.")
+    logger.info("\tTotal timesteps = " + str(total_timesteps))
+    logger.info("\tPeriod (sec) = " + str(period_sec))
+    logger.info("\tZ-Stack settings = " + str(zparams))
 
     timestep = 0
     filenames = {}
@@ -147,8 +152,8 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     # time lapse loop
     while timestep < total_timesteps:
-        print()
-        print("Taking z-stack " + str(timestep) + " ...")
+        # print()
+        logger.info("Taking z-stack " + str(timestep) + " ...")
         
         # turn the LED on
         set_led(m, excitation_strength)
@@ -162,18 +167,18 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         timestep += 1
 
         if timestep < total_timesteps:
-            print()
-            print("Waiting", period_sec, "seconds to take next z-stack ...")
+            # print()
+            logger.info("Waiting", period_sec, "seconds to take next z-stack ...")
             time.sleep(period_sec)
 
     # stop recording and running miniscope
     m.stop()
 
-    print()
-    print_hline() 
-    print("Time lapse recording finished.")
-    print_hline()
-    print()
+    # print()
+    # print_hline() 
+    logger.info("Time lapse recording finished.")
+    # print_hline()
+    # print()
 
     return filenames
 
@@ -224,18 +229,21 @@ def setup_parser(p):
     return p.parse_args()
 
 def setup_logger(l, base_dir):
+    '''Set up a logger object to write to stdout and a log file'''
+
+    # ensure all messages at least get passed to the logger object
     l.setLevel(logging.DEBUG)
 
+    # add streams to stdout and log file
     stdoutHandler = logging.StreamHandler(stream=sys.stdout)
     logfileHandler = logging.FileHandler(os.path.join(base_dir, 'timelapse.log'))
-
     stdoutHandler.setLevel(logging.DEBUG)
     logfileHandler.setLevel(logging.DEBUG) # change to INFO eventually
 
+    # set format
     fmt = logging.Formatter(
     "%(name)s: %(asctime)s | %(levelname)s | %(filename)s:%(lineno)s | %(process)d >>> %(message)s"
     )
-
     stdoutHandler.setFormatter(fmt)
     logfileHandler.setFormatter(fmt)
 
@@ -278,7 +286,8 @@ def main():
                                                 excitation_strength = args.excitation, \
                                                 gain = args.gain, \
                                                 total_timesteps = args.timesteps, \
-                                                period_sec = args.period)
+                                                period_sec = args.period, \
+                                                logger = logger)
 
         # write image filenames to an index file for merge function
         write_image_index(image_dir_now, image_filename_dict)
@@ -293,19 +302,19 @@ def main():
         # tell the merge function where to find the image index file
         merge_dir = image_dir_now
     else:
-        print()
-        print('Running in merge mode only. Filming parameters are ignored.')
+        # print()
+        logger.info('Running in merge mode only. Filming parameters are ignored.')
         merge_dir = args.directory
     
-    print()
-    print('Merging timelapse images in directory: ' + merge_dir + ' ... ')
-    print()
+    # print()
+    logger.info('Merging timelapse images in directory: ' + merge_dir + ' ... ')
+    # print()
 
     # merge images into a time lapse video
     merge_timelapse(FFMPEG_PATH, merge_dir, read_image_index(merge_dir))
 
-    print()
-    print('Merge complete!')
+    # print()
+    logger.info('Merge complete!')
 
     return
 
