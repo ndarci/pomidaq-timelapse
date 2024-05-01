@@ -4,8 +4,6 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 
-from contextlib import contextmanager
-
 # tell python where compiled miniscope module is installed
 sys.path.append('/lib/python3.10/dist-packages/')
 from miniscope import Miniscope, ControlKind
