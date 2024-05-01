@@ -15,6 +15,7 @@ import sys
 import cv2
 import subprocess
 import argparse
+import logging
 
 # tell python where compiled miniscope module is installed
 sys.path.append('/lib/python3.10/dist-packages/')
@@ -198,9 +199,9 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
                         # '-crf', '17', \
                         # '-pix_fmt', 'yuv420p', \
                         merged_video_path])
-
-def main():
-    parser = argparse.ArgumentParser()
+        
+def setup_parser(p):
+    '''Set up argument parser object and return parsed args'''
 
     help_m = '''Film mode shoots a series of time lapse videos at each z-level 
                 and saves them in structured directories. Merge mode performs the second step only,
@@ -212,15 +213,42 @@ def main():
     help_t = '''Number of time steps to record in the time lapse.'''
     help_p = '''Period between time lapse snapshots, in seconds.'''
 
-    parser.add_argument('mode', type = str, choices = ['film', 'merge'], default = 'film', help = help_m)
-    parser.add_argument('-d', '--directory', type = str, default = BASE_IMAGE_DIRNAME, help = help_d)
-    parser.add_argument('-e', '--excitation', type = int, default = 20, help = help_e)
-    parser.add_argument('-g', '--gain', type = int, default = 0, help = help_g)
-    parser.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 10], help = help_z)
-    parser.add_argument('-t', '--timesteps', type = int, default = 10, help = help_t)
-    parser.add_argument('-p', '--period', type = int, default = 60, help = help_p)
+    p.add_argument('mode', type = str, choices = ['film', 'merge'], default = 'film', help = help_m)
+    p.add_argument('-d', '--directory', type = str, default = BASE_IMAGE_DIRNAME, help = help_d)
+    p.add_argument('-e', '--excitation', type = int, default = 20, help = help_e)
+    p.add_argument('-g', '--gain', type = int, default = 0, help = help_g)
+    p.add_argument('-z', '--zstack', type = int, nargs = 3, default = [-120, 120, 10], help = help_z)
+    p.add_argument('-t', '--timesteps', type = int, default = 10, help = help_t)
+    p.add_argument('-p', '--period', type = int, default = 60, help = help_p)
     
-    args = parser.parse_args()
+    return p.parse_args()
+
+def setup_logger(l, base_dir):
+    stdoutHandler = logging.StreamHandler(stream=sys.stdout)
+    logfileHandler = logging.FileHandler(os.path.join(base_dir, 'timelapse.log'))
+
+    stdoutHandler.setLevel(logging.DEBUG)
+    logfileHandler.setLevel(logging.DEBUG) # change to INFO eventually
+
+    fmt = logging.Formatter(
+    "%(name)s: %(asctime)s | %(levelname)s | %(filename)s:%(lineno)s | %(process)d >>> %(message)s"
+    )
+
+    stdoutHandler.setFormatter(fmt)
+    logfileHandler.setFormatter(fmt)
+
+    l.addHandler(stdoutHandler)
+    l.addHandler(logfileHandler)
+
+def main():
+    # set up logger
+    logger = logging.getLogger(__name__)
+    setup_logger(logger, BASE_IMAGE_DIRNAME)
+    logger.info('foobar')
+
+    # set up argument parser and parse args
+    parser = argparse.ArgumentParser()
+    args = setup_parser(parser)
 
     if args.mode == 'merge' and args.directory == BASE_IMAGE_DIRNAME:
         parser.error('merge mode requires a previously filmed image directory passed to -d.')
