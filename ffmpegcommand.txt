@@ -1,4 +1,15 @@
+to merge images:
+~/src/ffmpeg-git-20240301-amd64-static/ffmpeg \
+    -framerate 30 \
+    -pattern_type glob \
+    -i "folder-with-photos/*.jpg" \
+    # -s:v 680x680 \
+    # -c:v libx264 \
+    # -crf 17 \
+    # -pix_fmt yuv420p \
+    my-timelapse.mp4
+
+to merge videos:
 ~/src/ffmpeg-git-20240301-amd64-static/ffmpeg -f concat -i vidlist.txt -c copy merged.mkv
 
 
-~/src/ffmpeg-git-20240301-amd64-static/ffmpeg -framerate 30 -pattern_type glob -i "folder-with-photos/*.jpg" -s:v 680x680 -c:v libx264 -crf 17 -pix_fmt yuv420p my-timelapse.mp4

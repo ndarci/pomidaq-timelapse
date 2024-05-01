@@ -50,19 +50,41 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     
     return os.path.join(image_dir, z_dir, img_name)
 
-def take_photo(m, image_fn, nbuffer_frames = 50):
+def take_photo(m, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
 
     # TODO: somehow control for the frames that are all covered in horizontal lines?
     # TODO: get rid of little BNO indicator logo in bottom corner
+    # TODO: write some try - except handling for the bug where we get 'failed to grab frame' mid time lapse... maybe reconnect?
 
     # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
     nframes = 0
+    frame = None
     while m.is_running and nframes < nbuffer_frames:
+        time.sleep(0.01)
         frame = m.current_disp_frame
-        if frame is not None:
-            nframes += 1
-    cv2.imwrite(image_fn, frame)
+        nframes += 1
+        
+    # temp code to reproduce frame grabbing issue
+    now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    if int(now[-1]) == 3:
+        frame = None
+        m.disconnect()
+
+    # if it fails to grab a frame, disconnect and reconnect to scope
+    if frame is None:
+        print()
+        print('Miniscope disconnected. Reconnecting...')
+        time.sleep(2)
+        m.disconnect()
+        setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
+        time.sleep(2)
+        frame = take_photo(m)
+
+    # fix this... returns a black frame when it disconnects
+
+    return frame
+        
 
 def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
     '''Shoot a z-stack of photos with the Miniscope'''
@@ -72,7 +94,11 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
 
         set_focus(m, current_focus)
-        take_photo(m, this_file_path)
+        frame = take_photo(m)
+        if frame is not None:
+            cv2.imwrite(this_file_path, frame)
+        else:
+            print('Failed to take photo!')
 
         filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
         current_focus += zparams['step']
