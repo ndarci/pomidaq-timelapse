@@ -76,7 +76,6 @@ def take_photo(m, nbuffer_frames = 50):
 
     # # if it fails to grab a frame, disconnect and reconnect to scope
     # if frame is None:
-    #     # print()
     #     logger.warning('Miniscope disconnected. Reconnecting...')
     #     time.sleep(2)
     #     m.disconnect()
@@ -129,20 +128,8 @@ def read_image_index(img_dir):
             img_fn_dict[z_dir].append(img_path)
     return img_fn_dict
 
-
-def print_hline():
-    print('--------------------')
-
 def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, index_file):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
-
-    # print()
-    # print_hline()
-    # print("Starting time lapse recording.")
-    # print("\tTotal timesteps = " + str(total_timesteps))
-    # print("\tPeriod (sec) = " + str(period_sec))
-    # print("\tZ-Stack settings = " + str(zparams))
-    # print_hline()
 
     logger.info("Starting time lapse recording.")
     logger.info("Total timesteps = " + str(total_timesteps))
@@ -158,7 +145,6 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     # time lapse loop
     while timestep < total_timesteps:
-        # print()
         logger.info("Taking z-stack " + str(timestep) + " ...")
         
         # turn the LED on
@@ -173,18 +159,13 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         timestep += 1
 
         if timestep < total_timesteps:
-            # print()
             logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack ...")
             time.sleep(period_sec)
 
     # stop recording and running miniscope
     m.stop()
 
-    # print()
-    # print_hline() 
     logger.info("Time lapse recording finished.")
-    # print_hline()
-    # print()
 
     # return filenames
 
@@ -304,28 +285,20 @@ def main():
         # # write image filenames to an index file for merge function
         # write_image_index(image_dir_now, image_filename_dict)
 
-        # print(image_filename_dict)
-        # print()
-        # print(read_image_index(image_dir_now))
-
         # disconnect from scope 
         mscope.disconnect()
 
         # tell the merge function where to find the image index file
         merge_dir = image_dir_now
     else:
-        # print()
         logger.info('Running in merge mode only. Filming parameters are ignored.')
         merge_dir = args.directory
     
-    # print()
     logger.info('Merging timelapse images in directory: ' + merge_dir + ' ... ')
-    # print()
 
     # merge images into a time lapse video
     merge_timelapse(FFMPEG_PATH, merge_dir, read_image_index(merge_dir))
 
-    # print()
     logger.info('Merge complete!')
 
     return
