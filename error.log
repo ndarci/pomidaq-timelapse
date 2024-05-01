@@ -1,5 +1,5 @@
-example: 2024-05-01 09:54:23,611 | ERROR | logger_test.py:37 | 96710 >>> Failed to connect to database: 'my_db'
+example: 2024-05-01 10:12:46,287 | ERROR | logger_test.py:37 | 10355 >>> Failed to connect to database: 'my_db'
 Traceback (most recent call last):
-  File "/Users/niko/src/pomidaq-timelapse/timelapse/logger_test.py", line 34, in <module>
+  File "/home/agroo/src/pomidaq-timelapse/logger_test.py", line 34, in <module>
     raise Exception("Failed to connect to database: 'my_db'")
 Exception: Failed to connect to database: 'my_db'

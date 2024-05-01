@@ -66,11 +66,11 @@ def take_photo(m, nbuffer_frames = 50):
         frame = m.current_disp_frame
         nframes += 1
         
-    # temp code to reproduce frame grabbing issue
-    now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    if int(now[-1]) == 3:
-        frame = None
-        m.disconnect()
+    # # temp code to reproduce frame grabbing issue
+    # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    # if int(now[-1]) == 3:
+    #     frame = None
+    #     m.disconnect()
 
     # if it fails to grab a frame, disconnect and reconnect to scope
     if frame is None:
@@ -224,6 +224,8 @@ def setup_parser(p):
     return p.parse_args()
 
 def setup_logger(l, base_dir):
+    l.setLevel(logging.DEBUG)
+
     stdoutHandler = logging.StreamHandler(stream=sys.stdout)
     logfileHandler = logging.FileHandler(os.path.join(base_dir, 'timelapse.log'))
 
@@ -241,14 +243,19 @@ def setup_logger(l, base_dir):
     l.addHandler(logfileHandler)
 
 def main():
-    # set up logger
-    logger = logging.getLogger(__name__)
-    setup_logger(logger, BASE_IMAGE_DIRNAME)
-    logger.info('foobar')
-
     # set up argument parser and parse args
     parser = argparse.ArgumentParser()
     args = setup_parser(parser)
+
+    # prep base image directory 
+    date_sec = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    image_dir_now = args.directory + '_' + str(date_sec)
+    os.makedirs(image_dir_now)
+
+    # set up logger
+    logger = logging.getLogger(__name__)
+    setup_logger(logger, image_dir_now)
+    # logger.info('foobar')
 
     if args.mode == 'merge' and args.directory == BASE_IMAGE_DIRNAME:
         parser.error('merge mode requires a previously filmed image directory passed to -d.')
@@ -260,10 +267,7 @@ def main():
         # run some diagnostics and start it running
         setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
 
-        # prep image directory and initial parameters
-        date_sec = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        image_dir_now = args.directory + '_' + str(date_sec)
-        os.makedirs(image_dir_now)
+        # prep initial parameters
         set_gain(mscope, args.gain) # gain is constant
         zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
 
