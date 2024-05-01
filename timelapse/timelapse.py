@@ -261,32 +261,33 @@ def main():
         parser.error('merge mode requires a previously filmed image directory passed to -d.')
 
     if args.mode == 'film': # film mode
-        # create new Miniscope instance
-        mscope = Miniscope()
+        try:
+            # create new Miniscope instance
+            mscope = Miniscope()
 
-        # run some diagnostics and start it running
-        setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
+            # run some diagnostics and start it running
+            setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
 
-        # prep initial parameters
-        set_gain(mscope, args.gain) # gain is constant
-        zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
+            # prep initial parameters
+            set_gain(mscope, args.gain) # gain is constant
+            zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
 
-        # run timelapse and save all images
-        index_file = open(os.path.join(image_dir_now, 'image_filename_index.csv'), 'w')
-        shoot_timelapse(mscope, \
-                        image_dir = image_dir_now, \
-                        zparams = zstack_parameters, \
-                        excitation_strength = args.excitation, \
-                        gain = args.gain, \
-                        total_timesteps = args.timesteps, \
-                        period_sec = args.period, \
-                        indexfile = index_file)
+            # run timelapse and save all images
+            index_file = open(os.path.join(image_dir_now, 'image_filename_index.csv'), 'w')
+            shoot_timelapse(mscope, \
+                            image_dir = image_dir_now, \
+                            zparams = zstack_parameters, \
+                            excitation_strength = args.excitation, \
+                            gain = args.gain, \
+                            total_timesteps = args.timesteps, \
+                            period_sec = args.period, \
+                            indexfile = index_file)
 
-        # # write image filenames to an index file for merge function
-        # write_image_index(image_dir_now, image_filename_dict)
-
-        # disconnect from scope 
-        mscope.disconnect()
+            # # write image filenames to an index file for merge function
+            # write_image_index(image_dir_now, image_filename_dict)
+        finally:
+            # disconnect from scope 
+            mscope.disconnect()
 
         # tell the merge function where to find the image index file
         merge_dir = image_dir_now

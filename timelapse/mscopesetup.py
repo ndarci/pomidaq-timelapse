@@ -12,12 +12,9 @@ from miniscope import Miniscope, ControlKind
 
 # def redirect_output(func, *args):
 #     '''Redirect the output from a third party function into a string'''
-
 #     buffer = io.StringIO()
 #     sys.stdout = buffer
-
 #     result = func(*args)
-
 #     sys.stdout = sys.__stdout__
 #     return result, buffer.getvalue()
 
@@ -70,11 +67,11 @@ def setup_miniscope(m, miniscope_name, daq_id):
     # result, output = redirect_output(m.set_cam_id, daq_id)
     # logger.info(output)
 
-    with stdout_redirected():
+    with stdout_redirected(to = 'foo.txt'):
         m.set_cam_id(daq_id)
 
     # connect to miniscope
-    with stdout_redirected():
+    with stdout_redirected(to = 'foo.txt'):
         result = m.connect()
     # logger.info(output)
     if not result:
@@ -82,7 +79,7 @@ def setup_miniscope(m, miniscope_name, daq_id):
         sys.exit(1)
 
     # run miniscope
-    with stdout_redirected():
+    with stdout_redirected(to = 'foo.txt'):
         result = m.run()
     # logger.info(output)
     if not result:
