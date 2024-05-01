@@ -15,7 +15,9 @@ import sys
 import cv2
 import subprocess
 import argparse
+
 import logging
+logger = logging.getLogger(__name__)
 
 # tell python where compiled miniscope module is installed
 sys.path.append('/lib/python3.10/dist-packages/')
@@ -51,20 +53,20 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     
     return os.path.join(image_dir, z_dir, img_name)
 
-def take_photo(m, logger, nbuffer_frames = 50):
+def take_photo(m, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
 
     # TODO: somehow control for the frames that are all covered in horizontal lines?
-    # TODO: get rid of little BNO indicator logo in bottom corner
     # TODO: write some try - except handling for the bug where we get 'failed to grab frame' mid time lapse... maybe reconnect?
 
     # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
     nframes = 0
     frame = None
     while m.is_running and nframes < nbuffer_frames:
-        time.sleep(0.01)
+        # time.sleep(0.01)
         frame = m.current_disp_frame
-        nframes += 1
+        if frame is not None:
+            nframes += 1
         
     # # temp code to reproduce frame grabbing issue
     # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -72,22 +74,22 @@ def take_photo(m, logger, nbuffer_frames = 50):
     #     frame = None
     #     m.disconnect()
 
-    # if it fails to grab a frame, disconnect and reconnect to scope
-    if frame is None:
-        # print()
-        logger.warning('Miniscope disconnected. Reconnecting...')
-        time.sleep(2)
-        m.disconnect()
-        setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
-        time.sleep(2)
-        # frame = take_photo(m)
+    # # if it fails to grab a frame, disconnect and reconnect to scope
+    # if frame is None:
+    #     # print()
+    #     logger.warning('Miniscope disconnected. Reconnecting...')
+    #     time.sleep(2)
+    #     m.disconnect()
+    #     setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
+    #     time.sleep(2)
+    #     # frame = take_photo(m)
 
     # fix this... returns a black frame when it disconnects
 
     return frame
         
 
-def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, logger):
+def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames):
     '''Shoot a z-stack of photos with the Miniscope'''
     current_focus = zparams['start']
     z_index = 0
@@ -95,7 +97,7 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, logger):
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
 
         set_focus(m, current_focus)
-        frame = take_photo(m, logger)
+        frame = take_photo(m)
         if frame is not None:
             cv2.imwrite(this_file_path, frame)
         else:
@@ -127,7 +129,7 @@ def read_image_index(img_dir):
 def print_hline():
     print('--------------------')
 
-def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, logger):
+def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
     # print()
@@ -139,9 +141,9 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
     # print_hline()
 
     logger.info("Starting time lapse recording.")
-    logger.info("\tTotal timesteps = " + str(total_timesteps))
-    logger.info("\tPeriod (sec) = " + str(period_sec))
-    logger.info("\tZ-Stack settings = " + str(zparams))
+    logger.info("Total timesteps = " + str(total_timesteps))
+    logger.info("Period (sec) = " + str(period_sec))
+    logger.info("Z-Stack settings = " + str(zparams))
 
     timestep = 0
     filenames = {}
@@ -168,7 +170,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
         if timestep < total_timesteps:
             # print()
-            logger.info("Waiting", period_sec, "seconds to take next z-stack ...")
+            logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack ...")
             time.sleep(period_sec)
 
     # stop recording and running miniscope
@@ -199,6 +201,7 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
                         '-framerate', '5', \
                         '-pattern_type', 'glob', \
                         '-i', img_dir + '/' + z_dir + '/*.jpg', \
+                        '-hide_banner', '-loglevel', 'error', \
                         # '-s:v', '680x680', \
                         # '-c:v', 'libx264', \
                         # '-crf', '17', \
@@ -228,11 +231,11 @@ def setup_parser(p):
     
     return p.parse_args()
 
-def setup_logger(l, base_dir):
-    '''Set up a logger object to write to stdout and a log file'''
+def setup_logger(base_dir):
+    '''Set up root logger config to write to stdout and a log file'''
 
     # ensure all messages at least get passed to the logger object
-    l.setLevel(logging.DEBUG)
+    # l.setLevel(logging.DEBUG)
 
     # add streams to stdout and log file
     stdoutHandler = logging.StreamHandler(stream=sys.stdout)
@@ -247,8 +250,10 @@ def setup_logger(l, base_dir):
     stdoutHandler.setFormatter(fmt)
     logfileHandler.setFormatter(fmt)
 
-    l.addHandler(stdoutHandler)
-    l.addHandler(logfileHandler)
+    # l.addHandler(stdoutHandler)
+    # l.addHandler(logfileHandler)
+
+    logging.basicConfig(level = logging.DEBUG, handlers = [stdoutHandler, logfileHandler])
 
 def main():
     # set up argument parser and parse args
@@ -261,9 +266,11 @@ def main():
     os.makedirs(image_dir_now)
 
     # set up logger
-    logger = logging.getLogger(__name__)
-    setup_logger(logger, image_dir_now)
+    setup_logger(image_dir_now)
     # logger.info('foobar')
+
+    # mlogger = logging.getLogger('miniscope').setLevel(logging.DEBUG)
+    # mlogger.info('foo')
 
     if args.mode == 'merge' and args.directory == BASE_IMAGE_DIRNAME:
         parser.error('merge mode requires a previously filmed image directory passed to -d.')
@@ -286,8 +293,7 @@ def main():
                                                 excitation_strength = args.excitation, \
                                                 gain = args.gain, \
                                                 total_timesteps = args.timesteps, \
-                                                period_sec = args.period, \
-                                                logger = logger)
+                                                period_sec = args.period)
 
         # write image filenames to an index file for merge function
         write_image_index(image_dir_now, image_filename_dict)
