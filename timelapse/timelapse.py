@@ -52,7 +52,7 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     
     return os.path.join(image_dir, z_dir, img_name)
 
-def take_photo(m, nbuffer_frames = 50):
+def take_photo(m):#, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
 
     # TODO: somehow control for the frames that are all covered in horizontal lines?
@@ -61,29 +61,21 @@ def take_photo(m, nbuffer_frames = 50):
     # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
     nframes = 0
     frame = None
-    while m.is_running and nframes < nbuffer_frames:
-        time.sleep(0.1)
+    signal = False
+
+    while (nframes < timeout_frames) and (signal == False or nframes < buffer_frames)
+
+
+    # while m.is_running and nframes < nbuffer_frames:
+    while m.is_running and (signal == False or nframes < 50):
+        # time.sleep(0.05)
         frame = m.current_disp_frame
-        # if frame is not None:
         nframes += 1
-        
-    # # temp code to reproduce frame grabbing issue
-    # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    # if int(now[-1]) == 3:
-    #     frame = None
-    #     m.disconnect()
+        if frame is not None:
+            if sum(sum(frame)) > 0:
+                signal = True
 
-    # # if it fails to grab a frame, disconnect and reconnect to scope
-    # if frame is None:
-    #     logger.warning('Miniscope disconnected. Reconnecting...')
-    #     time.sleep(2)
-    #     m.disconnect()
-    #     setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
-    #     time.sleep(2)
-    #     # frame = take_photo(m)
-
-    # fix this... returns a black frame when it disconnects
-
+    logger.debug('frame success: ' + str(frame is not None) + ' | frame number : ' + str(nframes))
     return frame
         
 
@@ -93,18 +85,43 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file):
     z_index = 0
     while current_focus <= zparams['end']:
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
-
         set_focus(m, current_focus)
-        frame_start_time = get_date_sec()
-        frame = take_photo(m)
-        if frame is not None:
-            cv2.imwrite(this_file_path, frame)
-            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
-        else:
-            logger.warning('Failed to take photo!')
-            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'FAILED' + '\n')
+        attempts = 0
+        while attempts < 3:
+            # try to take a photo
+            frame_start_time = get_date_sec()
+            frame = take_photo(m)
+            attempts += 1
 
-        
+            # # temp code to reproduce frame grabbing issue
+            # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            # if int(now[-1]) == 3:
+            #     frame = None
+
+            if frame is None: # miniscope disconnected
+                logger.warning('Failed to take photo! (attempt ' + str(attempts) + ')')
+                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'FAILED' + '\n')
+                # try to reconnect the miniscope
+                time.sleep(2)
+                m.stop()
+                m.disconnect()
+                time.sleep(2)
+                m = Miniscope()
+                setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
+                time.sleep(2)
+            elif sum(sum(frame)) == 0: # took a blank frame
+                # just try again
+                logger.warning('Took a blank photo! (attempt ' + str(attempts) + ')')
+                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'BLANK' + '\n')
+            else: # success
+                cv2.imwrite(this_file_path, frame) # write the image itself
+                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
+                break
+                
+        # TODO: after reconnecting, keeps taking blank frames for some reason
+
+        if frame is None or sum(sum(frame)) == 0:
+            logger.error('Failed to take valid photo after ' + str(attempts) + ' attempts. Check the Miniscope connection.')
         current_focus += zparams['step']
         z_index += 1
         
@@ -136,9 +153,6 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         if timestep < total_timesteps:
             logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack")
             time.sleep(period_sec)
-
-    # stop recording and running miniscope
-    m.stop()
 
     logger.info("Time lapse recording finished.")
 
@@ -263,7 +277,8 @@ def main():
                             index_file = index_file)
             
         finally: # these resource-closing commands should run no matter what happens
-            # disconnect from scope 
+            # turn off scope and disconnect from it
+            mscope.stop()
             mscope.disconnect()
 
             # close index file

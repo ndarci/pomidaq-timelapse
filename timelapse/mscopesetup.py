@@ -7,14 +7,6 @@ logger = logging.getLogger(__name__)
 sys.path.append('/lib/python3.10/dist-packages/')
 from miniscope import Miniscope, ControlKind
 
-# def redirect_output(func, *args):
-#     '''Redirect the output from a third party function into a string'''
-#     buffer = io.StringIO()
-#     sys.stderr = buffer
-#     result = func(*args)
-#     sys.stderr = sys.__stderr__
-#     return result, buffer.getvalue()
-
 def setup_miniscope(m, miniscope_name, daq_id):
     '''Take a freshly instantiated miniscope 'm', run some setup diagnostics on it, and get it running'''
     # disable some debug/info messages about data transmission
