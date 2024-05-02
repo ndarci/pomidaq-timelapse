@@ -303,5 +303,6 @@ def main():
     return
 
 if __name__ == '__main__':
-    with stderr_redirected():
-        main()
+    # with stderr_redirected():
+    #     main()
+    main()

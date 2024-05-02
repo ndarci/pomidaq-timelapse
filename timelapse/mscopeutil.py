@@ -1,6 +1,15 @@
 import sys
 import os
+import io
 from contextlib import contextmanager
+
+def redirect_output(func, *args):
+    '''Redirect the output from a third party function into a string'''
+    buffer = io.StringIO()
+    sys.stderr = buffer
+    result = func(*args)
+    sys.stderr = sys.__stderr__
+    return result, buffer.getvalue()
 
 @contextmanager
 def stderr_redirected(to=os.devnull):

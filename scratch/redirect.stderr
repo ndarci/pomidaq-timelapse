@@ -1,0 +1,4 @@
+this should be silenced:
+foo
+this should be printed:
+hello
