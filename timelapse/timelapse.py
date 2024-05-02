@@ -43,8 +43,6 @@ def params_to_suffix(z_str, led, gain):
 def generate_file_path(image_dir, time_step, z_index, focus, led, gain):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
-    # TODO: get a precise timestamp of when the image was taken, store in name or metadata... or a log file I save in parent direc? even a csv I could analyze?
-
     z_dir = z_int_to_string(z_index, focus)
     if not os.path.exists(os.path.join(image_dir, z_dir)):
         os.makedirs(os.path.join(image_dir, z_dir))
@@ -89,7 +87,7 @@ def take_photo(m, nbuffer_frames = 50):
     return frame
         
 
-def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, index_file):
+def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file):
     '''Shoot a z-stack of photos with the Miniscope'''
     current_focus = zparams['start']
     z_index = 0
@@ -103,26 +101,10 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, filenames, index_fi
         else:
             logger.warning('Failed to take photo!')
 
-        # filenames[z_int_to_string(z_index, current_focus)].append(this_file_path)
         index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + '\n')
         current_focus += zparams['step']
         z_index += 1
         
-    # return filenames
-
-def read_image_index(img_dir):
-    infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
-    img_fn_dict = {}
-    for line in infile:
-        splitline = line.strip().split(',')
-        z_dir = splitline[0]
-        img_path = splitline[1]
-        if z_dir not in img_fn_dict.keys():
-            img_fn_dict[z_dir] = [img_path]
-        else:
-            img_fn_dict[z_dir].append(img_path)
-    return img_fn_dict
-
 def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, index_file):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
@@ -132,11 +114,11 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
     logger.info("Z-Stack settings = " + str(zparams))
 
     timestep = 0
-    filenames = {}
-    i = 0
-    for z in range(zparams['start'], zparams['end']+1, zparams['step']):
-        filenames[z_int_to_string(i, z)] = []
-        i += 1
+    # filenames = {}
+    # i = 0
+    # for z in range(zparams['start'], zparams['end']+1, zparams['step']):
+    #     filenames[z_int_to_string(i, z)] = []
+    #     i += 1
 
     # time lapse loop
     while timestep < total_timesteps:
@@ -146,7 +128,7 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
         set_led(m, excitation_strength)
 
         # take a z-stack at the current state
-        take_zstack(m, image_dir, timestep, zparams, excitation_strength, gain, filenames, index_file)
+        take_zstack(m, image_dir, timestep, zparams, excitation_strength, gain, index_file)
         
         # turn the LED off
         set_led(m, 0)
@@ -162,7 +144,18 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
 
     logger.info("Time lapse recording finished.")
 
-    # return filenames
+def read_image_index(img_dir):
+    infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
+    img_fn_dict = {}
+    for line in infile:
+        splitline = line.strip().split(',')
+        z_dir = splitline[0]
+        img_path = splitline[1]
+        if z_dir not in img_fn_dict.keys():
+            img_fn_dict[z_dir] = [img_path]
+        else:
+            img_fn_dict[z_dir].append(img_path)
+    return img_fn_dict
 
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
@@ -214,9 +207,6 @@ def setup_parser(p):
 def setup_logger(base_dir):
     '''Set up root logger config to write to stdout and a log file'''
 
-    # ensure all messages at least get passed to the logger object
-    # l.setLevel(logging.DEBUG)
-
     # add streams to stdout and log file
     stdoutHandler = logging.StreamHandler(stream=sys.stdout)
     logfileHandler = logging.FileHandler(os.path.join(base_dir, 'timelapse.log'))
@@ -229,9 +219,6 @@ def setup_logger(base_dir):
     )
     stdoutHandler.setFormatter(fmt)
     logfileHandler.setFormatter(fmt)
-
-    # l.addHandler(stdoutHandler)
-    # l.addHandler(logfileHandler)
 
     logging.basicConfig(level = logging.DEBUG, handlers = [stdoutHandler, logfileHandler])
 
@@ -247,10 +234,6 @@ def main():
 
     # set up logger
     setup_logger(image_dir_now)
-    # logger.info('foobar')
-
-    # mlogger = logging.getLogger('miniscope').setLevel(logging.DEBUG)
-    # mlogger.info('foo')
 
     if args.mode == 'merge' and args.directory == BASE_IMAGE_DIRNAME:
         parser.error('merge mode requires a previously filmed image directory passed to -d.')
@@ -277,10 +260,8 @@ def main():
                             total_timesteps = args.timesteps, \
                             period_sec = args.period, \
                             index_file = index_file)
-
-            # # write image filenames to an index file for merge function
-            # write_image_index(image_dir_now, image_filename_dict)
-        finally:
+            
+        finally: # these resource-closing commands should run no matter what happens
             # disconnect from scope 
             mscope.disconnect()
 
