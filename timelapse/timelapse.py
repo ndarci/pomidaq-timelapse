@@ -62,10 +62,10 @@ def take_photo(m, nbuffer_frames = 50):
     nframes = 0
     frame = None
     while m.is_running and nframes < nbuffer_frames:
-        # time.sleep(0.01)
+        time.sleep(0.1)
         frame = m.current_disp_frame
-        if frame is not None:
-            nframes += 1
+        # if frame is not None:
+        nframes += 1
         
     # # temp code to reproduce frame grabbing issue
     # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -95,13 +95,16 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file):
         this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
 
         set_focus(m, current_focus)
+        frame_start_time = get_date_sec()
         frame = take_photo(m)
         if frame is not None:
             cv2.imwrite(this_file_path, frame)
+            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
         else:
             logger.warning('Failed to take photo!')
+            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'FAILED' + '\n')
 
-        index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + '\n')
+        
         current_focus += zparams['step']
         z_index += 1
         
@@ -114,11 +117,6 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
     logger.info("Z-Stack settings = " + str(zparams))
 
     timestep = 0
-    # filenames = {}
-    # i = 0
-    # for z in range(zparams['start'], zparams['end']+1, zparams['step']):
-    #     filenames[z_int_to_string(i, z)] = []
-    #     i += 1
 
     # time lapse loop
     while timestep < total_timesteps:
@@ -222,13 +220,16 @@ def setup_logger(base_dir):
 
     logging.basicConfig(level = logging.DEBUG, handlers = [stdoutHandler, logfileHandler])
 
+def get_date_sec():
+    return datetime.now().strftime("%Y-%m-%d_%H%M%S")
+
 def main():
     # set up argument parser and parse args
     parser = argparse.ArgumentParser()
     args = setup_parser(parser)
 
     # prep base image directory 
-    date_sec = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    date_sec = get_date_sec()
     image_dir_now = args.directory + '_' + str(date_sec)
     os.makedirs(image_dir_now)
 
