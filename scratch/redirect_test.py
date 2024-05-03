@@ -14,19 +14,19 @@ from contextlib import redirect_stderr, redirect_stdout
 sys.path.append('/lib/python3.10/dist-packages/')
 from miniscope import Miniscope, ControlKind
 
-# def redirect_output(func, *args, **kwargs):
-# # def redirect_output(func):
-#     '''Redirect the output from a third party function into a string'''
+def redirect_output(func, *args, **kwargs):
+# def redirect_output(func):
+    '''Redirect the output from a third party function into a string'''
 
-#     buffer = io.StringIO()
-#     sys.stderr = buffer
+    buffer = io.StringIO()
+    sys.stderr = buffer
 
-#     func(*args, **kwargs)
-#     # func()
-#     # print('foo', file = sys.stderr)
+    result = func(*args, **kwargs)
+    # func()
+    # print('foo', file = sys.stderr)
 
-#     sys.stderr = sys.__stderr__
-#     # return result, buffer.getvalue()
+    sys.stderr = sys.__stderr__
+    return result, buffer.getvalue()
 
 
 
@@ -69,9 +69,11 @@ logger.info('Connecting to DAQ with ID: {}'.format(daq_id))
 m.set_cam_id(daq_id)
 
 # connect to miniscope
-with io.StringIO() as buffer, redirect_stderr(open('/dev/null')):
-    result = m.connect()
-    output = buffer.getvalue()
+# with io.StringIO() as buffer, redirect_stderr(buffer):
+#     result = m.connect()
+#     output = buffer.getvalue()
+
+result, output = redirect_output(m.connect)
 
 print('result: ' + str(result))
 print('output: ' + output)

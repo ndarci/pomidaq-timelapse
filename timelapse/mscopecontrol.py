@@ -38,3 +38,10 @@ def set_gain(m, val):
         time.sleep(1)
     else:
         logger.error("Please input a value between 0 and 2.")
+
+def get_frame(m):
+    '''Get the current frame from the miniscope 'm'.'''
+    time.sleep(0.1)
+    frame = m.current_disp_frame
+    time.sleep(0.1)
+    return frame
