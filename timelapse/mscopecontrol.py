@@ -14,7 +14,7 @@ def set_led(m, val):
         time.sleep(1)
         logger.info('Setting LED excitation to {}'.format(val))
         m.set_control_value('led0', val)
-        time.sleep(1)
+        # time.sleep(1)
     else:
         logger.error("Please input a value between 0 and 100.")
 
@@ -24,7 +24,7 @@ def set_focus(m, val):
         time.sleep(1)
         logger.info('Setting working distance to {}'.format(val))
         m.set_control_value('ewl', val)
-        time.sleep(1)
+        # time.sleep(1)
     else:
         logger.error("Please input a value between -127 and 127.")
 
@@ -35,7 +35,7 @@ def set_gain(m, val):
         time.sleep(1)
         logger.info('Setting gain to {}'.format(val))
         m.set_control_value('gain', val)
-        time.sleep(1)
+        # time.sleep(1)
     else:
         logger.error("Please input a value between 0 and 2.")
 
@@ -43,5 +43,5 @@ def get_frame(m):
     '''Get the current frame from the miniscope 'm'.'''
     time.sleep(0.1)
     frame = m.current_disp_frame
-    time.sleep(0.1)
+    # time.sleep(0.05)
     return frame

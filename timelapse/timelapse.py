@@ -15,6 +15,7 @@ import sys
 import cv2
 import subprocess
 import argparse
+import numpy as np
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,23 +69,27 @@ def take_photo(m):
 
     # TODO: somehow control for the frames that are all covered in horizontal lines?
 
-    # it takes a few frames to warm up, throw away the first (nbuffer_frames - 1) frames, then save the last
-    nframes = 0
+    i = 0 # frame index
     frame = None
-    signal = False
+    timeout_frame = 1000
+    buffer_frames = 20
+    signal_frame = timeout_frame
 
-    # while (nframes < timeout_frames) and (signal == False or nframes < buffer_frames)
-    while m.is_running and nframes < 50:
+    # keep grabbing frames until we time out, or hit signal + a little buffer
+    while (i < timeout_frame) and (i < signal_frame + buffer_frames):
         frame = get_frame(m)
         
-        if frame is not None:
-            logger.debug('frame signal strength: ' + str(sum(sum(frame))))
-        else:
-            logger.debug('frame is None')
+        # if frame is not None:
+        #     logger.debug('frame signal strength: ' + str(sum(sum(frame))))
+        # else:
+        #     logger.debug('frame is None')
 
-        nframes += 1
+        # detect the first time we hit a nonzero signal
+        if np.any(frame) and signal_frame == timeout_frame:
+            signal_frame = i
 
-    # logger.debug('frame success: ' + str(frame is not None) + ' | frame number : ' + str(nframes))
+        i += 1
+
     return frame
         
 
