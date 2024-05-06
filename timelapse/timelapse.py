@@ -67,30 +67,32 @@ def take_photo0(m, nbuffer_frames = 50):
 def take_photo(m):
     '''Take a photo with the Miniscope'''
 
-    # TODO: somehow control for the frames that are all covered in horizontal lines?
-
     i = 0 # frame index
     frame = None
-    timeout_frame = 1000
-    buffer_frames = 20
-    signal_frame = timeout_frame
+    buffer_frames = 50
 
-    # keep grabbing frames until we time out, or hit signal + a little buffer
-    while (i < timeout_frame) and (i < signal_frame + buffer_frames):
+    max_signal = 0
+    max_frame = None
+
+    # sometimes the camera takes a few frames to warm up, give it a buffer to guarantee a good signal
+    while i < buffer_frames:
         frame = get_frame(m)
         
         # if frame is not None:
-        #     logger.debug('frame signal strength: ' + str(sum(sum(frame))))
+        #     logger.debug('frame signal strength: ' + np.sum(frame))
         # else:
         #     logger.debug('frame is None')
 
-        # detect the first time we hit a nonzero signal
-        if np.any(frame) and signal_frame == timeout_frame:
-            signal_frame = i
+        if frame is not None: # can't do math operations on None
+            signal_strength = np.sum(frame)
+
+            # save the frame with the strongest signal
+            if signal_strength > max_signal:
+                max_frame = frame
 
         i += 1
 
-    return frame
+    return max_frame
         
 
 def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file):
@@ -98,49 +100,34 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file):
     current_focus = zparams['start']
     z_index = 0
     while current_focus <= zparams['end']:
-        this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
+        # update focus
         set_focus(m, current_focus)
-        attempts = 0
-        while attempts < 3:
-            # try to take a photo
-            frame_start_time = get_date_sec()
-            frame = take_photo(m)
-            attempts += 1
 
-            # # temp code to reproduce frame grabbing issue
-            # now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-            # if int(now[-1]) == 3:
-            #     frame = None
+        # remember metadata
+        this_file_path = generate_file_path(image_dir, time_step, z_index, current_focus, led, gain)
+        frame_start_time = get_date_sec()
 
-            if frame is None: # miniscope disconnected
-                logger.warning('Failed to take photo! (attempt ' + str(attempts) + ')')
-                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'FAILED' + '\n')
-                # try to reconnect the miniscope
-                m.stop()
-                m.disconnect()
-                time.sleep(2)
-                m = Miniscope()
-                setup_miniscope(m, MINISCOPE_NAME, DAQ_ID)
-                set_led(m, led)
-                set_gain(m, gain)
-                time.sleep(2)
-            elif sum(sum(frame)) == 0: # took a blank frame
-                # just try again
-                logger.warning('Took a blank photo! (attempt ' + str(attempts) + ')')
-                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'BLANK' + '\n')
-            else: # success
-                cv2.imwrite(this_file_path, frame) # write the image itself
-                index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
-                break
-                
-        # TODO: after reconnecting, keeps taking blank frames for some reason
+        # try to take a photo
+        frame = take_photo(m)
 
-        if frame is None or sum(sum(frame)) == 0:
-            logger.error('Failed to take valid photo after ' + str(attempts) + ' attempts. Check the Miniscope connection.')
+        if frame is None: # disconnected during z-stack
+            logger.warning('Failed to take photo!')
+            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'FAILED' + '\n')
+            return False
+        elif (not np.any(frame)): # got a blank photo
+            logger.warning('Took a blank photo!')
+            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + 'BLANK' + '\n')
+            return False
+        else: # success
+            cv2.imwrite(this_file_path, frame) # write the image itself
+            index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
+
         current_focus += zparams['step']
         z_index += 1
+
+    return True
         
-def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, index_file):
+def shoot_timelapse(image_dir, zparams, excitation_strength, gain, total_timesteps, period_sec, index_file):
     '''Shoot a timelapse, which will be a set of folders for each z-level, full of image files at each time point.'''
 
     logger.info("Starting time lapse recording.")
@@ -149,25 +136,41 @@ def shoot_timelapse(m, image_dir, zparams, excitation_strength, gain, total_time
     logger.info("Z-Stack settings = " + str(zparams))
 
     timestep = 0
+    attempts = 0
+    max_attempts = 3 # number of times we allow a z-stack to fail before aborting
 
     # time lapse loop
     while timestep < total_timesteps:
-        logger.info("Taking z-stack " + str(timestep))
-        
-        # turn the LED on
-        set_led(m, excitation_strength)
+        # connect to the miniscope and set proper control levels
+        logger.info("Connecting to Miniscope")
+        try:
+            mscope = Miniscope() # create new Miniscope instance
+            setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID) # run some diagnostics and start it running
+            set_gain(mscope, gain)
+            set_led(mscope, excitation_strength)
 
-        # take a z-stack at the current state
-        take_zstack(m, image_dir, timestep, zparams, excitation_strength, gain, index_file)
-        
-        # turn the LED off
-        set_led(m, 0)
-        
-        timestep += 1
+            # take a z-stack at the current state
+            logger.info("Taking z-stack " + str(timestep))
+            status = take_zstack(mscope, image_dir, timestep, zparams, excitation_strength, gain, index_file)
+            attempts += 1
 
-        if timestep < total_timesteps:
-            logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack")
-            time.sleep(period_sec)
+        finally:
+            # turn off and disconnect from the miniscope
+            set_led(mscope, 0)
+            mscope.stop()
+            mscope.disconnect()
+
+        if status: # successful z-stack
+            timestep += 1
+            attempts = 0
+            if timestep < total_timesteps:
+                logger.info("Waiting " + str(period_sec) + " seconds to take next z-stack")
+                time.sleep(period_sec)
+        elif attempts >= max_attempts:
+            logger.error('Z-stack failed on attempt ' + str(attempts) + ' (final attempt). Check the Miniscope connection.')
+            break
+        else:
+            logger.warning('Z-stack failed on attempt ' + str(attempts) + '. Trying again.')            
 
     logger.info("Time lapse recording finished.")
 
@@ -229,8 +232,6 @@ def setup_parser(p):
     p.add_argument('-t', '--timesteps', type = int, default = 10, help = help_t)
     p.add_argument('-p', '--period', type = int, default = 60, help = help_p)
     
-    return p.parse_args()
-
 def setup_logger(base_dir):
     '''Set up root logger config to write to stdout and a log file'''
 
@@ -255,7 +256,8 @@ def get_date_sec():
 def main():
     # set up argument parser and parse args
     parser = argparse.ArgumentParser()
-    args = setup_parser(parser)
+    setup_parser(parser)
+    args = parser.parse_args()
 
     # prep base image directory 
     date_sec = get_date_sec()
@@ -270,32 +272,17 @@ def main():
 
     if args.mode == 'film': # film mode
         try:
-            # create new Miniscope instance
-            mscope = Miniscope()
-
-            # run some diagnostics and start it running
-            setup_miniscope(mscope, MINISCOPE_NAME, DAQ_ID)
-
-            # prep initial parameters
-            set_gain(mscope, args.gain) # gain is constant
-            zstack_parameters = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}
-
             # run timelapse and save all images
             index_file = open(os.path.join(image_dir_now, 'image_filename_index.csv'), 'w')
-            shoot_timelapse(mscope, \
-                            image_dir = image_dir_now, \
-                            zparams = zstack_parameters, \
+            shoot_timelapse(image_dir = image_dir_now, \
+                            zparams = {'start': args.zstack[0], 'end': args.zstack[1], 'step': args.zstack[2]}, \
                             excitation_strength = args.excitation, \
                             gain = args.gain, \
                             total_timesteps = args.timesteps, \
                             period_sec = args.period, \
                             index_file = index_file)
-            
+                
         finally: # these resource-closing commands should run no matter what happens
-            # turn off scope and disconnect from it
-            mscope.stop()
-            mscope.disconnect()
-
             # close index file
             index_file.close()
 
