@@ -24,22 +24,22 @@ Positional argument.
 
 ### excitation
 
-`-e` or `--excitation`. Integer 0 - 100 representing LED excitation strength. Default 20.
+`-e` or `--excitation`. Integer [0, 100] representing LED excitation strength. Default 20.
 
 ### gain
 
-`-g` or `--gain`. Integer 0 - 2 representing gain applied to captured images. Default 0.
+`-g` or `--gain`. Integer [0, 2] representing gain applied to captured images. Default 0.
 
 ### zstack
 
-`-z` or `--zstack`. Three integers -120 - 120 representing working distance start, end, and step for each z-stack. Default [-120, 120, 10].
+`-z` or `--zstack`. Three integers, separated by spaces, representing working distance start [-120, 120], end [-120, 120], and step [1, (end-start)] for each z-stack Default `-120 120 10`.
 
 ### timesteps
 
-`-t` or `--timesteps`. Integer representing number of timesteps to capture for the time lapse. Default 10.
+`-t` or `--timesteps`. Positive integer representing number of timesteps to capture for the time lapse. Default 10.
 
 ### period
 
-`-p` or `--period`. Integer representing period in **seconds** between time lapse snapshots. Default 60. 
+`-p` or `--period`. Positive integer representing period in **seconds** between time lapse snapshots. Default 60. 
 
 
