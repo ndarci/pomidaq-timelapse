@@ -32,7 +32,7 @@ Positional argument.
 
 ### zstack
 
-`-z` or `--zstack`. Three integers, separated by spaces, representing working distance start [-120, 120], end [-120, 120], and step [1, (end-start)] for each z-stack Default `-120 120 10`.
+`-z` or `--zstack`. Three integers, separated by spaces, representing working distance start [-120, 120], end [-120, 120], and step [1, (end-start)] for each z-stack. Default `-120 120 10`.
 
 ### timesteps
 
