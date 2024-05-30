@@ -74,6 +74,8 @@ def take_photo(m):
     max_signal = 0
     max_frame = None
 
+    # TODO: speed this up... almost never need all 50 frames. if signal is strong, take a frame then
+
     # sometimes the camera takes a few frames to warm up, give it a buffer to guarantee a good signal
     while i < buffer_frames:
         frame = get_frame(m)
@@ -88,6 +90,7 @@ def take_photo(m):
 
             # save the frame with the strongest signal
             if signal_strength > max_signal:
+                max_signal = signal_strength
                 max_frame = frame
 
         i += 1
@@ -157,6 +160,7 @@ def shoot_timelapse(image_dir, zparams, excitation_strength, gain, total_timeste
         finally:
             # turn off and disconnect from the miniscope
             set_led(mscope, 0)
+            time.sleep(1)
             mscope.stop()
             mscope.disconnect()
 
