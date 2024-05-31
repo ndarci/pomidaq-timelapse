@@ -179,6 +179,7 @@ def shoot_timelapse(image_dir, zparams, excitation_strength, gain, total_timeste
     logger.info("Time lapse recording finished.")
 
 def read_image_index(img_dir):
+    '''read an index file of frame paths into a dictionary for merge function'''
     infile = open(os.path.join(img_dir, 'image_filename_index.csv'), 'r')
     img_fn_dict = {}
     for line in infile:
@@ -189,19 +190,27 @@ def read_image_index(img_dir):
             img_fn_dict[z_dir] = [img_path]
         else:
             img_fn_dict[z_dir].append(img_path)
+    # for each dict entry: key = z-level string, value = list of paths to all frames at that z-level
     return img_fn_dict
 
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
 
-    # slice up the filename of the first image file to extract the led and gain parameters
-    # fine to take the first bc these are constants for the whole timelapse
-    key0 = list(img_fn_dict.keys())[0]
-    filename0 = img_fn_dict[key0][0]
-    suffixlist = filename0.split('.')[0].split('_')[-3:]
-    suffix = '_'.join(suffixlist)
+    # # slice up the filename of the first image file to extract the led and gain parameters
+    # # fine to take the first bc these are constants for the whole timelapse
+    # key0 = list(img_fn_dict.keys())[0]
+    # filename0 = img_fn_dict[key0][0]
+    # suffixlist = filename0.split('.')[0].split('_')[-3:]
+    # suffix = '_'.join(suffixlist)
 
     for z_dir in img_fn_dict.keys():
+        # remember parameters at this z-level for video filename
+        suffixlist = [z_dir]
+        # slice up first filename to get led and gain information
+        filename0 = img_fn_dict[z_dir][0]
+        suffixlist.extend(filename0.split('.')[0].split('_')[-2:])
+        suffix = '_'.join(suffixlist)
+
         merged_video_name = 'miniscope_timelapse_' + suffix + '.mp4'
         merged_video_path = os.path.join(img_dir, z_dir, merged_video_name)
         subprocess.call([ffmpeg_path, \
