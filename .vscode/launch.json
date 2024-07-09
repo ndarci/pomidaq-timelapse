@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["film", "-d", "~/niko_miniscope_vids/log_test", "-z", "0", "100", "100", "-t", "2", "-p", "1", "-e" , "75", "-g", "1"]
+            "args": ["film", "-d", "~/niko_miniscope_vids/debug", "-z", "0", "100", "100", "-t", "2", "-p", "1", "-e" , "75", "-g", "1"]
         }
     ]
 }

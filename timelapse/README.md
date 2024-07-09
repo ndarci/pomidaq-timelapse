@@ -20,7 +20,7 @@ Positional argument.
 
 ### directory
 
-`-d` or `--directory`. Path to the output directory. Default global `BASE_IMAGE_DIRNAME`.
+`-d` or `--directory`. Path to the output directory. A unique date string will be added to the beginning of the final directory name. Default global `BASE_IMAGE_DIRNAME`.
 
 ### excitation
 

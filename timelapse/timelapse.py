@@ -85,16 +85,17 @@ def take_photo(m):
         # else:
         #     logger.debug('frame is None')
 
-        if frame is not None: # can't do math operations on None
-            signal_strength = np.sum(frame)
+        # if frame is not None: # can't do math operations on None
+        #     signal_strength = np.sum(frame)
 
-            # save the frame with the strongest signal
-            if signal_strength > max_signal:
-                max_signal = signal_strength
-                max_frame = frame
+        #     # save the frame with the strongest signal
+        #     if signal_strength > max_signal:
+        #         max_signal = signal_strength
+        #         max_frame = frame
 
         i += 1
 
+    max_frame = frame
     return max_frame
         
 
@@ -230,7 +231,7 @@ def setup_parser(p):
     help_m = '''Film mode shoots a series of time lapse videos at each z-level 
                 and saves them in structured directories. Merge mode performs the second step only,
                 merging a previously shot set of images into a video (default 'film').'''
-    help_d = '''Base directory to write output images and merged videos.'''
+    help_d = '''Base directory to write output images and merged videos. A unique date string will be added to the beginning of the final directory name.'''
     help_e = '''LED excitation strength (0 - 100).'''
     help_g = '''Gain applied to output images (0 - 2).'''
     help_z = '''Z-stack start, end, and step for each timepoint (-127 - +127).'''
@@ -273,8 +274,11 @@ def main():
     args = parser.parse_args()
 
     # prep base image directory 
+    if args.directory[-1] == '/':
+        args.directory = args.directory[:-1]
     date_sec = get_date_sec()
-    image_dir_now = args.directory + '_' + str(date_sec)
+    head, tail = os.path.split(args.directory)
+    image_dir_now = head + '/' + str(date_sec) + '_' + tail
     os.makedirs(image_dir_now)
 
     # set up logger
