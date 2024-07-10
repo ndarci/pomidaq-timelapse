@@ -209,7 +209,7 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict):
         suffixlist = [z_dir]
         # slice up first filename to get led and gain information
         filename0 = img_fn_dict[z_dir][0]
-        suffixlist.extend(filename0.split('.')[0].split('_')[-2:])
+        suffixlist.extend(os.path.basename(filename0).split('.')[0].split('_')[-2:])
         suffix = '_'.join(suffixlist)
 
         merged_video_name = 'miniscope_timelapse_' + suffix + '.mp4'
