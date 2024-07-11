@@ -2,6 +2,8 @@
 
 `timelapse.py` is the main script for running the Miniscope in time lapse mode. In order to run the script, first follow the setup instructions in `../README.md`.
 
+For instructions on getting the program set up in the Groover Lab, see [below](##groover-lab-setup). 
+
 ## Usage
 
 ```
@@ -16,7 +18,7 @@ Positional argument.
 
 `film` records a series of time lapse images according to the given parameters, and merges them into a video at each working distance. 
 
-`merge` takes a previously recorded set of images (must be provided using option `-d`) and merges them into a video at each working distance. This option is mainly useful for creating a video even if the time lapse fails partway through.
+`merge` takes a previously recorded set of images (must be provided using option `-d`) and merges them into a video at each working distance. This option is mainly useful for creating a video after the time lapse fails partway through.
 
 ### directory
 
@@ -41,5 +43,11 @@ Positional argument.
 ### period
 
 `-p` or `--period`. Positive integer representing period in **seconds** between time lapse snapshots. Default 60. 
+
+
+## Groover Lab Setup
+
+Start with the laptop turned off and the Miniscope unplugged from the USB port.
+
 
 
