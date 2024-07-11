@@ -2,7 +2,7 @@
 
 `timelapse.py` is the main script for running the Miniscope in time lapse mode. In order to run the script, first follow the setup instructions in `../README.md`.
 
-For instructions on getting the program set up in the Groover Lab, see [below](##groover-lab-setup). 
+For instructions on getting the program set up in the Groover Lab, see [below](#groover-lab-setup). 
 
 ## Usage
 
@@ -119,5 +119,5 @@ pomidaq
 
 After running this command, the PoMiDAQ app should launch. Click `Connect`, and when a signal appears, use the excitation (LED), gain, and EWL (focus) controls to get a good view of your sample. When you're happy with your signal, place a box on top of the whole setup to block the room lights. Remember the excitation and gain levels you used, and take care not to move the Miniscope at all. Turn the excitation back to 0 to avoid photobleaching your sample. Close the PoMiDAQ app and go back to the WSL terminal.
 
-From here, you can follow the [Usage](##Usage) instructions above to record a time lapse!
+From here, you can follow the [Usage](#usage) instructions above to record a time lapse!
 
