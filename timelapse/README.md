@@ -44,6 +44,19 @@ Positional argument.
 
 `-p` or `--period`. Positive integer representing period in **seconds** between time lapse snapshots. Default 60. 
 
+## Known Issues and Development Areas
+
+### Miniscope disconnects during long recordings
+
+In recordings around 24+ hours, the Miniscope often disconnects spontaneously, and the connection cannot be recovered by running `setup_miniscope`. Currently, the program attempts to connect 3 times and then gives up, ending the time lapse where it failed and saving the frames it did collect. This could be caused by the likely tenous chain of connections required for the program to communicate with the Miniscope (WSL -> Windows -> USB -> DAQ -> Miniscope), and might be solved by substituting a native Linux controller like a Raspberry Pi. 
+
+### Slow `take_photo` function
+
+When the program starts grabbing frames from the Miniscope at the first z-level, the first several frames have no signal. To account for this, the `take_photo` function grabs 50 frames and returns the last one. This works, but is slow enough that a z-stack with a small step size may take 5-10 minutes to complete. Most of the time, one of the first frames will have a perfectly good signal. This function should be updated to efficiently detect the first frame with signal and return it.
+
+### Inconsistent logging
+
+The logging and output should be cleaned up. I set up a system using the `logging` library for warnings and errors coming from my code, but the `miniscope` library still outputs its own messages, and these could be better harmonized.
 
 ## Groover Lab Setup
 
