@@ -47,7 +47,77 @@ Positional argument.
 
 ## Groover Lab Setup
 
-Start with the laptop turned off and the Miniscope unplugged from the USB port.
+The time lapse program runs on a virtual Linux system (WSL) inside the laptop's Windows operating system. Before running it, you need to use the terminal to allow WSL to communicate with the Miniscope via the laptop's USB ports.
 
+Start like this:
+* Laptop and DAQ box plugged into power
+* Laptop logged out or turned off
+* DAQ box unplugged from laptop USB port 
+* Miniscope plugged into DAQ box at "Scope" port
 
+Log into the laptop with the password in the `USFS ORISE - Niko/miniscope` Drive folder.
+
+Open Windows PowerShell. When you see the PowerShell command prompt, `PS C:\Users\agroo>`, run the following command to activate the Linux subsystem:
+
+```
+wsl
+```
+
+After a moment you will see the WSL command prompt, `(base) agroo@DESKTOP-H560LU9:/mnt/c/Users/agroo$`. Leave this WSL window open, and right-click on the PowerShell logo in the dock. In the menu that pops up, click `Windows PowerShell` to open a new terminal.
+
+Now you will have two terminal windows open - one running PowerShell and one running WSL. Use the command prompts from above to tell them apart.  
+
+Now, plug the DAQ box into one of the laptop's USB ports. Inside the PowerShell terminal, run the following command to list connected USB devices:
+
+```
+usbipd list
+```
+
+You should see an output like this:
+
+```
+TODO: ADD USBIPD OUTPUT
+```
+
+Notice the `MINISCOPE` device on the third row of the table. Depending on which USB port you plugged it into, its BUSID will either be `1-13` or `1-14`. To allow WSL to communicate with the Miniscope, run the following command, adjusting the `--busid` parameter according to the output you saw above if needed:
+
+```
+usbipd attach --wsl --busid 1-13
+```
+
+Now, switch over to the WSL terminal window. To verify that the USB linking worked, run the following:
+
+```
+lsusb
+```
+
+You should see an output like this, including `MINISCOPE`:
+
+```
+TODO: ADD LSUSB OUTPUT
+```
+
+If this looks good, navigate to the time lapse folder:
+
+```
+cd ~/src/pomidaq-timelapse
+```
+
+Next, activate the Python environment with all the right libraries to run the time lapse program:
+
+```
+conda activate miniscope310
+```
+
+Your command prompt should now start with `(miniscope310)`. 
+
+From here, you can open the PoMiDAQ graphical interface to get the sample in focus:
+
+```
+pomidaq
+```
+
+After running this command, the PoMiDAQ app should launch. Click `Connect`, and when a signal appears, use the excitation (LED), gain, and EWL (focus) controls to get a good view of your sample. When you're happy with your signal, place a box on top of the whole setup to block the room lights. Remember the excitation and gain levels you used, and take care not to move the Miniscope at all. Turn the excitation back to 0 to avoid photobleaching your sample. Close the PoMiDAQ app and go back to the WSL terminal.
+
+From here, you can follow the [Usage](##usage) instructions above to record a time lapse!
 
