@@ -100,7 +100,7 @@ TODO: ADD LSUSB OUTPUT
 If this looks good, navigate to the time lapse folder:
 
 ```
-cd ~/src/pomidaq-timelapse
+cd ~/src/pomidaq-timelapse/timelapse
 ```
 
 Next, activate the Python environment with all the right libraries to run the time lapse program:
