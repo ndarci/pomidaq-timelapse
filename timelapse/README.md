@@ -76,7 +76,15 @@ usbipd list
 You should see an output like this:
 
 ```
-TODO: ADD USBIPD OUTPUT
+Connected:
+BUSID  VID:PID    DEVICE                                                        STATE
+1-6    0c45:671e  Integrated Webcam                                             Not shared
+1-10   0cf3:e009  Qualcomm QCA9377 Bluetooth                                    Not shared
+1-13   04b4:00f9  MINISCOPE                                                     Shared
+
+Persisted:
+GUID                                  DEVICE
+8e0ebd17-1ea7-4020-9473-ea7056040b0c  MINISCOPE
 ```
 
 Notice the `MINISCOPE` device on the third row of the table. Depending on which USB port you plugged it into, its BUSID will either be `1-13` or `1-14`. To allow WSL to communicate with the Miniscope, run the following command, adjusting the `--busid` parameter according to the output you saw above if needed:
@@ -94,7 +102,9 @@ lsusb
 You should see an output like this, including `MINISCOPE`:
 
 ```
-TODO: ADD LSUSB OUTPUT
+Bus 002 Device 002: ID 04b4:00f9 Cypress Semiconductor Corp. MINISCOPE
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
 ```
 
 If this looks good, navigate to the time lapse folder:
