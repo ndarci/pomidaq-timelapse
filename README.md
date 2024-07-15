@@ -8,6 +8,8 @@ For the original PoMiDAQ README, see ORIG_README.md or the [PoMiDAQ GitHub](http
 
 Groover Lab members: to run a time lapse on the lab Miniscope laptop, go straight to the [timelapse folder](timelapse/). 
 
+For the 3D model of the Miniscope holder we use, see the [3d model folder](miniscope_holder_3D_model/)
+
 ## Prerequisities
 
 We set this up on a Windows laptop with the following specs:
