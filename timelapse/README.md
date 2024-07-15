@@ -54,6 +54,14 @@ In recordings around 24+ hours, the Miniscope often disconnects spontaneously, a
 
 When the program starts grabbing frames from the Miniscope at the first z-level, the first several frames have no signal. To account for this, the `take_photo` function grabs 50 frames and returns the last one. This works, but is slow enough that a z-stack with a small step size may take 5-10 minutes to complete. Most of the time, one of the first frames will have a perfectly good signal. This function should be updated to efficiently detect the first frame with signal and return it.
 
+### Frame averaging
+
+It would probably improve image quality to implement a [frame averaging algorithm](https://www.nde-ed.org/NDETechniques/Radiography/AdvancedTechniques/Real_Time_Radiography/FrameAveraging.xhtml#:~:text=The%20digital%20image%20processor%20can,value%20between%20zero%20and%20255.) inside the `take_photo` function.  
+
+### Image format command line argument
+
+It would be nice to be able to specify the desired image format when running the program, rather than having `jpg` hard-coded.
+
 ### Inconsistent logging
 
 The logging and output should be cleaned up. I set up a system using the `logging` library for warnings and errors coming from my code, but the `miniscope` library still outputs its own messages, and these could be better harmonized.
