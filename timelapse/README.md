@@ -7,18 +7,10 @@ For instructions on getting the program set up in the Groover Lab, see [below](#
 ## Usage
 
 ```
-python timelapse.py [film/merge] [-d output directory] [-e excitation strength] [-g gain] [-z z-stack parameters] [-t timesteps] [-p period]
+python timelapse.py [-d output directory] [-e excitation strength] [-g gain] [-z z-stack parameters] [-t timesteps] [-p period] [-f image format] [-m merge mode]
 ```
 
 ## Options
-
-### mode
-
-Positional argument.
-
-`film` records a series of time lapse images according to the given parameters, and merges them into a video at each working distance. 
-
-`merge` takes a previously recorded set of images (must be provided using option `-d`) and merges them into a video at each working distance. This option is mainly useful for creating a video after the time lapse fails partway through.
 
 ### directory
 
@@ -38,11 +30,18 @@ Positional argument.
 
 ### timesteps
 
-`-t` or `--timesteps`. Positive integer representing number of timesteps to capture for the time lapse. Default 10.
+`-t` or `--timesteps`. Positive integer representing number of timesteps to capture for the time lapse. Default 24.
 
 ### period
 
-`-p` or `--period`. Positive integer representing period in **seconds** between time lapse snapshots. Default 60. 
+`-p` or `--period`. Positive integer representing period in **seconds** between time lapse snapshots. Default 3600 (1 hour). 
+
+### imgformat
+`-f` or `--imgformat`. String representing image format to use when saving time lapse frames ['png', 'jpg', 'tiff']. Default 'png'.
+
+### merge
+
+`-m` or `--merge`. Merge mode takes a previously recorded set of images (must be provided using option `-d`) and merges them into a video at each working distance. This option is mainly useful for creating a video after the time lapse fails partway through.
 
 ## Known Issues and Development Areas
 
@@ -57,10 +56,6 @@ When the program starts grabbing frames from the Miniscope at the first z-level,
 ### Frame averaging
 
 It would probably improve image quality to implement a [frame averaging algorithm](https://www.nde-ed.org/NDETechniques/Radiography/AdvancedTechniques/Real_Time_Radiography/FrameAveraging.xhtml#:~:text=The%20digital%20image%20processor%20can,value%20between%20zero%20and%20255.) inside the `take_photo` function.  
-
-### Image format command line argument
-
-It would be nice to be able to specify the desired image format when running the program, rather than having `jpg` hard-coded.
 
 ### Inconsistent logging
 
