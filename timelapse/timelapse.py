@@ -59,7 +59,7 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain, img_form
 
     return finalpath
 
-# OG function, works perfectly until miniscope disconnects, sometimes produces blank frames
+# orig version of take_photo, hangs if miniscope disconnects, sometimes sends out blank frames
 def take_photo0(m, nbuffer_frames = 50):
     '''Take a photo with the Miniscope'''
     nframes = 0
@@ -70,39 +70,42 @@ def take_photo0(m, nbuffer_frames = 50):
     
     return frame
 
+# less efficient version of take_photo, grabs way more frames than needed for most cases
+def take_photo1(m):
+    '''Take a photo with the Miniscope'''
+    i = 0
+    frame = None
+    buffer_frames = 50
+    while i<buffer_frames:
+        frame = get_frame(m)
+        i += 1
+    return frame    
+
 def take_photo(m):
     '''Take a photo with the Miniscope'''
 
     i = 0 # frame index
     frame = None
-    buffer_frames = 50
+    timeout_frame_min = 100 # stop trying after this many blank/none frames
 
-    max_signal = 0
-    max_frame = None
+    good_frame_count = 0
+    good_frame_min = 5 # take this many frames after we start getting signal
 
-    # TODO: speed this up... almost never need all 50 frames. if signal is strong, take a frame then
-
-    # sometimes the camera takes a few frames to warm up, give it a buffer to guarantee a good signal
-    while i < buffer_frames:
+    # when it first connects, the camera sends zero signal for a few dozen frames
+    # wait until a signal is detected for a few frames at a time, then save the newest one
+    while i < timeout_frame_min:
         frame = get_frame(m)
         
-        # if frame is not None:
-        #     logger.debug('frame signal strength: ' + np.sum(frame))
-        # else:
-        #     logger.debug('frame is None')
+        if frame is not None:
+            if np.any(frame):
+                good_frame_count += 1
 
-        # if frame is not None: # can't do math operations on None
-        #     signal_strength = np.sum(frame)
-
-        #     # save the frame with the strongest signal
-        #     if signal_strength > max_signal:
-        #         max_signal = signal_strength
-        #         max_frame = frame
+            if good_frame_count >= good_frame_min:
+                break
 
         i += 1
 
-    max_frame = frame
-    return max_frame
+    return frame
         
 
 def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file, img_format):
@@ -210,13 +213,6 @@ def read_image_index(img_dir):
 def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, img_format):
     '''Use ffmpeg to merge the miniscope images into a single video for each z-level'''
 
-    # # slice up the filename of the first image file to extract the led and gain parameters
-    # # fine to take the first bc these are constants for the whole timelapse
-    # key0 = list(img_fn_dict.keys())[0]
-    # filename0 = img_fn_dict[key0][0]
-    # suffixlist = filename0.split('.')[0].split('_')[-3:]
-    # suffix = '_'.join(suffixlist)
-
     for z_dir in img_fn_dict.keys():
         # remember parameters at this z-level for video filename
         suffixlist = [z_dir]
@@ -241,9 +237,6 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, img_format):
 def setup_parser(p):
     '''Set up argument parser object and return parsed args'''
 
-    # help_m = '''Film mode shoots a series of time lapse videos at each z-level 
-    #             and saves them in structured directories. Merge mode performs the second step only,
-    #             merging a previously shot set of images into a video (default 'film').'''
     help_d = '''Base directory to write output images and merged videos. A unique date string 
                 will be added to the beginning of the final directory name.'''
     help_e = '''LED excitation strength.'''
@@ -256,7 +249,6 @@ def setup_parser(p):
                 set of images into videos at each z-level. You must provide a directory 
                 with a previous time lapse stored in it.'''
 
-    # p.add_argument('mode', type = str, choices = ['film', 'merge'], default = 'film', help = help_m)
     p.add_argument('-d', '--directory', type = str, default = BASE_IMAGE_DIRNAME, help = help_d)
     p.add_argument('-e', '--excitation', type = int, choices = range(0, 101), metavar = '[0-100]', default = 20, help = help_e)
     p.add_argument('-g', '--gain', type = int, choices = range(0, 3), metavar = '[0-2]', default = 0, help = help_g)
