@@ -43,6 +43,16 @@ python timelapse.py [-d output directory] [-e excitation strength] [-g gain] [-z
 
 `-m` or `--merge`. Merge mode takes a previously recorded set of images (must be provided using option `-d`) and merges them into a video at each working distance. This option is mainly useful for creating a video after the time lapse fails partway through.
 
+## Output
+
+The program will write a series of images inside the directory that was passed to `-d`. Each z-level will have its own sub-directory, containing images from every time step and a video of the entire merged time lapse. These sub-directories are named by z order (0-indexed) and z-level, e.g. if the third z-level is at -20, the sub-directory with those images will be named `z2_neg20`.
+
+The `zselect` directory will contain copies of images from all the z-levels at the first time step, so you can quickly scroll through to find the most in-focus z-level.
+
+`image_filename_index.csv` contains metadata for each image recorded.
+
+`timelapse.log` contains the logger output for the timelapse run.
+
 ## Known Issues and Development Areas
 
 ### Miniscope disconnects during long recordings

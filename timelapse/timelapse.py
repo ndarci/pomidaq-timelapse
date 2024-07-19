@@ -41,7 +41,7 @@ def z_int_to_string(z_index, focus):
 def params_to_suffix(z_str, led, gain):
     return z_str + '_led' + str(led) + '_gain' + str(gain)
 
-def generate_file_path(image_dir, time_step, z_index, focus, led, gain, img_format):
+def generate_file_path(image_dir, time_step, z_index, focus, led, gain, img_format, zselect = False):
     '''Generate an absolute path for a single image, using all the info associated with that image. Create the z directory if needed.'''
 
     z_dir = z_int_to_string(z_index, focus)
@@ -51,7 +51,13 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain, img_form
     # get all the relevant image info into the final filename
     img_name = 'miniscope_t' + str(time_step) + '_' + params_to_suffix(z_dir, led, gain) + '.' + img_format
     
-    return os.path.join(image_dir, z_dir, img_name)
+    if zselect:
+        # generate a modified path for image copies going into the zselect folder 
+        finalpath = os.path.join(image_dir, 'zselect', img_name)
+    else:
+        finalpath = os.path.join(image_dir, z_dir, img_name)
+
+    return finalpath
 
 # OG function, works perfectly until miniscope disconnects, sometimes produces blank frames
 def take_photo0(m, nbuffer_frames = 50):
@@ -125,6 +131,13 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file, img_for
         else: # success
             cv2.imwrite(this_file_path, frame) # write the image itself
             index_file.write(z_int_to_string(z_index, current_focus) + ',' + this_file_path + ',' + frame_start_time + '\n')
+            
+            # on first timestep, add image to z-level selecting folder
+            if time_step == 0:
+                if not os.path.exists(os.path.join(image_dir, 'zselect')):
+                    os.makedirs(os.path.join(image_dir, 'zselect'))
+                cv2.imwrite(generate_file_path(image_dir, time_step, z_index, current_focus, led, gain, img_format, zselect = True), frame)
+
 
         current_focus += zparams['step']
         z_index += 1
