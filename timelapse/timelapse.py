@@ -88,7 +88,7 @@ def take_photo(m):
     timeout_frame_min = 100 # stop trying after this many blank/none frames
 
     good_frame_count = 0
-    good_frame_min = 5 # take this many frames after we start getting signal
+    good_frame_min = 25 # take this many frames after we start getting signal
 
     # when it first connects, the camera sends zero signal for a few dozen frames
     # wait until a signal is detected for a few frames at a time, then save the newest one
