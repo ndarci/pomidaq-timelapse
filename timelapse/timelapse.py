@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 sys.path.append('/lib/python3.10/dist-packages/')
 from miniscope import Miniscope, ControlKind
 
-from mscopeutil import stderr_redirected
 from mscopesetup import setup_miniscope
 from mscopecontrol import set_led, set_focus, set_gain, get_frame
 
@@ -258,7 +257,6 @@ def setup_parser(p):
     p.add_argument('-f', '--imgformat', type = str, choices = ['png', 'jpg', 'tiff'], default = 'png', help = help_f)
     p.add_argument('-m', '--merge', action = 'store_true', default = False, help = help_m)
 
-
 def setup_logger(base_dir):
     '''Set up root logger config to write to stdout and a log file'''
 
@@ -335,6 +333,4 @@ def main():
     return
 
 if __name__ == '__main__':
-    # with stderr_redirected():
-    #     main()
     main()

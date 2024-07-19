@@ -65,7 +65,7 @@ It would probably improve image quality to implement a [frame averaging algorith
 
 ### Inconsistent logging
 
-The logging and output should be cleaned up. I set up a system using the `logging` library for warnings and errors coming from my code, but the `miniscope` library still outputs its own messages, and these could be better harmonized.
+The logging and output should be cleaned up. I set up a system using the `logging` library for warnings and errors coming from my code, but the `miniscope` library still outputs its own messages, and these could be better harmonized. This is tricky to do because the `miniscope` library is all written in C, and seems very determined to have its output printed to stderr.
 
 ## Groover Lab Setup
 
