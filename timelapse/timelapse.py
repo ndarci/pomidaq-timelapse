@@ -259,7 +259,7 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, img_format):
                         # '-s:v', '680x680', \
                         # '-c:v', 'libx264', \
                         # '-crf', '17', \
-                        # '-pix_fmt', 'yuv420p', \
+                        '-pix_fmt', 'yuv420p', \
                         merged_video_path])
         
 def setup_parser(p):
