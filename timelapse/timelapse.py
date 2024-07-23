@@ -256,9 +256,10 @@ def merge_timelapse(ffmpeg_path, img_dir, img_fn_dict, img_format):
                         '-pattern_type', 'glob', \
                         '-i', img_dir + '/' + z_dir + '/*.' + img_format, \
                         '-hide_banner', '-loglevel', 'error', \
-                        # '-s:v', '680x680', \
-                        # '-c:v', 'libx264', \
-                        # '-crf', '17', \
+                        '-y', \
+                        '-s:v', '680x680', \
+                        '-c:v', 'libx264', \
+                        '-crf', '17', \
                         '-pix_fmt', 'yuv420p', \
                         merged_video_path])
         
