@@ -80,6 +80,18 @@ def take_photo1(m):
         i += 1
     return frame    
 
+def warm_up_miniscope(m):
+    '''Flushes through a bunch of frames to get the signal started on a freshly connected Miniscope.'''
+    i = 0
+    flush_size = 100
+    signal_threshold = 10
+
+    while i < flush_size:
+        frame = get_frame(m)
+        i += 1
+    
+    return np.max(frame) > signal_threshold
+
 def take_photo(m):
     '''Take a photo with the Miniscope'''
 
@@ -88,7 +100,7 @@ def take_photo(m):
     timeout_frame_min = 100 # stop trying after this many blank/none frames
 
     good_frame_count = 0
-    good_frame_min = 25 # take this many frames after we start getting signal
+    good_frame_min = 3 # take this many frames after we start getting signal
 
     # when it first connects, the camera sends zero signal for a few dozen frames
     # wait until a signal is detected for a few frames at a time, then save the newest one
@@ -111,6 +123,10 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file, img_for
     '''Shoot a z-stack of photos with the Miniscope'''
     current_focus = zparams['start']
     z_index = 0
+
+    logger.info('Warming up Miniscope')
+    warm_up_miniscope(m)
+
     while current_focus <= zparams['end']:
         # update focus
         set_focus(m, current_focus)
