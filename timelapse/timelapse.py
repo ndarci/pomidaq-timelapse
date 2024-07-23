@@ -58,27 +58,36 @@ def generate_file_path(image_dir, time_step, z_index, focus, led, gain, img_form
 
     return finalpath
 
-# orig version of take_photo, hangs if miniscope disconnects, sometimes sends out blank frames
-def take_photo0(m, nbuffer_frames = 50):
-    '''Take a photo with the Miniscope'''
-    nframes = 0
-    while m.is_running and nframes < nbuffer_frames:
-        frame = m.current_disp_frame
-        if frame is not None:
-            nframes += 1
+# # orig version of take_photo, hangs if miniscope disconnects, sometimes sends out blank frames
+# def take_photo0(m, nbuffer_frames = 50):
+#     '''Take a photo with the Miniscope'''
+#     nframes = 0
+#     while m.is_running and nframes < nbuffer_frames:
+#         frame = m.current_disp_frame
+#         if frame is not None:
+#             nframes += 1
     
-    return frame
+#     return frame
 
-# less efficient version of take_photo, grabs way more frames than needed for most cases
-def take_photo1(m):
-    '''Take a photo with the Miniscope'''
-    i = 0
-    frame = None
-    buffer_frames = 50
-    while i<buffer_frames:
-        frame = get_frame(m)
-        i += 1
-    return frame    
+# # less efficient version of take_photo, grabs way more frames than needed for most cases
+# def take_photo1(m):
+#     '''Take a photo with the Miniscope'''
+#     i = 0
+#     frame = None
+#     buffer_frames = 50
+#     while i<buffer_frames:
+#         frame = get_frame(m)
+#         i += 1
+#     return frame    
+
+def frame_debug_info(f):
+    if f is None:
+        logger.debug('Frame is None')
+    else:
+        fmax = np.max(f)
+        fsum = np.sum(f)
+        logger.debug('Frame max: ' + str(fmax))
+        logger.debug('Frame sum: ' + str(fsum))
 
 def warm_up_miniscope(m):
     '''Flushes through a bunch of frames to get the signal started on a freshly connected Miniscope.'''
@@ -88,6 +97,7 @@ def warm_up_miniscope(m):
 
     while i < flush_size:
         frame = get_frame(m)
+        # frame_debug_info(frame)
         i += 1
     
     return np.max(frame) > signal_threshold
@@ -106,6 +116,7 @@ def take_photo(m):
     # wait until a signal is detected for a few frames at a time, then save the newest one
     while i < timeout_frame_min:
         frame = get_frame(m)
+        # frame_debug_info(frame)
         
         if frame is not None:
             if np.any(frame):
@@ -125,8 +136,10 @@ def take_zstack(m, image_dir, time_step, zparams, led, gain, index_file, img_for
     z_index = 0
 
     logger.info('Warming up Miniscope')
-    warm_up_miniscope(m)
-
+    if not warm_up_miniscope(m): # failed to start grabbing frames with signal
+        logger.warning('Failed to detect frames with signal. You may want to check the sample and excitation.')
+        return False
+    
     while current_focus <= zparams['end']:
         # update focus
         set_focus(m, current_focus)
