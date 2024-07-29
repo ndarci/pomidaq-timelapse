@@ -67,6 +67,10 @@ It would probably improve image quality to implement a [frame averaging algorith
 
 The logging and output should be cleaned up. I set up a system using the `logging` library for warnings and errors coming from my code, but the `miniscope` library still outputs its own messages, and these could be better harmonized. This is tricky to do because the `miniscope` library is all written in C, and seems very determined to have its output printed to stderr.
 
+### Video merging strangeness
+
+Sometimes, the merged videos have frames that are out of order. This should be sorted out by doing some troubleshooting with the `ffmpeg` inputs and options. Also, it would be nice to modify the control flow so that the videos are still created even after a `KeyboardInterrupt`.
+
 ## Groover Lab Setup
 
 The time lapse program runs on a virtual Linux system (WSL) inside the laptop's Windows operating system. Before running it, you need to use the terminal to allow WSL to communicate with the Miniscope via the laptop's USB ports.
